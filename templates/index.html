@@ -1,0 +1,60 @@
+{% load static %}
+{% load pwa %} {# PWA meta etiketleri için #}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personel Sistemi - Giriş</title>
+    {% progressive_web_app_meta %} {# PWA meta etiketlerini buraya ekler #}
+    <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+
+    <div class="login-container">
+
+        {# Şirket Logosu - Yolun doğru olduğundan emin olun (static/images/logo.png veya static/logo.png) #}
+        {% comment %} Logonuzun tam yolunu buraya girin {% endcomment %}
+        <img src="{% static 'images/logo.jpg' %}" alt="Şirket Logosu" class="login-logo">
+        {# Eğer logo images klasöründe değilse: <img src="{% static 'logo.png' %}" ...> #}
+
+
+        <form id="login-form" method="POST">
+            {% csrf_token %} {# Güvenlik için zorunlu #}
+
+            <h2>Sisteme Giriş</h2>
+
+            {# Canlı Saat ve Tarih Gösterimi #}
+            <div id="clock-container">
+                <span id="date"></span>
+                <span id="time"></span>
+            </div>
+
+            <div class="input-group">
+                <input type="text" id="username" name="username" placeholder="Kullanıcı Adı / E-posta" required>
+            </div>
+
+            <div class="input-group">
+                <input type="password" id="password" name="password" placeholder="Şifre" required>
+            </div>
+
+            <button type="submit" class="login-button">GİRİŞ YAP</button>
+
+            <div class="forgot-password">
+                <a href="#">Şifremi Unuttum?</a> {# Bu link henüz bir yere gitmiyor #}
+            </div>
+
+            {# Giriş hatası mesajı (varsa gösterilir) #}
+            {% if error_message %}
+                <div id="error-message" class="error-message" style="display: block;">
+                    {{ error_message }}
+                </div>
+            {% endif %}
+        </form>
+    </div>
+
+    {# Canlı saat/tarih için JavaScript dosyası #}
+    <script src="{% static 'js/main.js' %}"></script>
+
+</body>
+</html>

@@ -1,0 +1,45 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Haftalık Vardiya Planlama - Şube Seçin</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; background-color: #f9f9f9; }
+        .container { max-width: 600px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); text-align: center; }
+        h1 { margin-bottom: 30px; }
+        .branch-list a {
+            display: block;
+            padding: 15px 20px;
+            margin-bottom: 15px;
+            background-color: #1a73e8; /* Mavi renk Vardiya Planlama için */
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-size: 1.2rem;
+            font-weight: 500;
+            transition: background-color 0.2s ease;
+        }
+        .branch-list a:hover { background-color: #0056b3; }
+        .back-link { display: inline-block; margin-top: 20px; color: #555; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Haftalık Vardiya Planlama İçin Şube Seçin</h1>
+        <div class="branch-list">
+            {% for branch in branches %} {# views.py'dan gelen şube listesi #}
+                {# Her şube için özel VARDİYA planlama sayfasına link ver (Doğru URL adı ve namespace) #}
+                <a href="{% url 'accounts:weekly_schedule_branch' branch.id %}">
+                    {{ branch.name }} Şubesini Planla
+                </a>
+            {% empty %}
+                <p>Sistemde henüz şube tanımlanmamış.</p>
+                <p><a href="/admin/accounts/branch/add/">Admin panelinden şube ekleyebilirsiniz.</a></p> {# Admin paneline link #}
+            {% endfor %}
+        </div>
+        <a href="{% url 'accounts:dashboard' %}" class="back-link">Ana Panele Geri Dön</a> {# Namespace kullanıldı #}
+    </div>
+</body>
+</html>

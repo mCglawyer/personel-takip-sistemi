@@ -1,0 +1,71 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aylık Puantaj Raporu - Seçim</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; background-color: #f9f9f9; }
+        .container { max-width: 600px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        h1 { text-align: center; margin-bottom: 30px; }
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-weight: 500; }
+        .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        .submit-button { display: block; width: 100%; padding: 12px; background-color: #28a745; color: white; border: none; border-radius: 5px; font-size: 1.1rem; cursor: pointer; transition: background-color 0.2s ease; }
+        .submit-button:hover { background-color: #218838; }
+        .back-link { display: block; text-align: center; margin-top: 20px; color: #555; }
+         /* Başarı/Uyarı Mesajı Stili */
+        .alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px; }
+        .alert-error { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Aylık Puantaj Raporu</h1>
+
+        {# Hata mesajları varsa göster #}
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        {# Form GET metodu ile aynı sayfaya veya view'a yönlendirecek #}
+        <form method="GET" action="{% url 'accounts:attendance_report_select' %}">
+            <div class="form-group">
+                <label for="branch">Şube Seçin:</label>
+                <select name="branch" id="branch" required>
+                    <option value="">--- Tüm Şubeler ---</option> {# Veya sadece belirli şubeleri listele #}
+                    {% for branch in branches %}
+                        <option value="{{ branch.id }}">{{ branch.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="year">Yıl Seçin:</label>
+                <select name="year" id="year" required>
+                    {% for year_option in years %}
+                        <option value="{{ year_option }}" {% if year_option == current_year %}selected{% endif %}>{{ year_option }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="month">Ay Seçin:</label>
+                <select name="month" id="month" required>
+                    {% for month_num in months %}
+                        {# Ay isimlerini Türkçe göstermek için bir filtre gerekebilir veya manuel yazılabilir #}
+                        <option value="{{ month_num }}" {% if month_num == current_month %}selected{% endif %}>
+                             {% if month_num == 1 %}Ocak{% elif month_num == 2 %}Şubat{% elif month_num == 3 %}Mart{% elif month_num == 4 %}Nisan{% elif month_num == 5 %}Mayıs{% elif month_num == 6 %}Haziran{% elif month_num == 7 %}Temmuz{% elif month_num == 8 %}Ağustos{% elif month_num == 9 %}Eylül{% elif month_num == 10 %}Ekim{% elif month_num == 11 %}Kasım{% elif month_num == 12 %}Aralık{% endif %}
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="submit-button">Raporu Oluştur</button>
+        </form>
+        <a href="{% url 'accounts:dashboard' %}" class="back-link">Ana Panele Geri Dön</a>
+    </div>
+</body>
+</html>

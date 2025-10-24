@@ -1,0 +1,185 @@
+/* style.css */
+
+/* --- 1. Genel Sıfırlama ve Sayfa Arka Planı --- */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background-color: #f0f2f5; /* Açık gri arka plan */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+/* --- 2. Ana Giriş Kutusu --- */
+.login-container {
+    background-color: #ffffff;
+    padding: 2.5rem;
+    border-radius: 10px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 400px;
+    text-align: center; /* İçindeki her şeyi ortalar (logo, başlık) */
+}
+
+/* --- 3. Logo Stili --- */
+.login-logo {
+    max-width: 200px; /* Logonun kutudan taşmasını engeller. */
+    height: auto; /* Resmin oranını korur */
+    margin-bottom: 1.5rem; /* Logo ile "Sisteme Giriş" yazısı arasına boşluk */
+}
+
+/* --- 4. Başlık (Sisteme Giriş) --- */
+h2 {
+    color: #333;
+    margin-bottom: 1.5rem;
+    font-size: 1.8rem;
+    font-weight: 600;
+}
+
+/* --- 5. Form Elemanları --- */
+.input-group {
+    margin-bottom: 1.5rem;
+}
+
+.input-group input {
+    width: 100%;
+    padding: 1rem;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    box-sizing: border-box; 
+    font-size: 1rem;
+}
+
+/* --- 6. Giriş Butonu (Siyah) --- */
+.login-button {
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    border-radius: 5px;
+    background-color: #000;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-bottom: 1.5rem;
+}
+
+.login-button:hover {
+    background-color: #333;
+}
+
+/* --- 7. Şifremi Unuttum Linki --- */
+.forgot-password {
+    text-align: center;
+    font-size: 0.9rem;
+}
+
+.forgot-password a {
+    color: #555;
+    text-decoration: none;
+}
+
+.forgot-password a:hover {
+    text-decoration: underline;
+}
+
+/* --- 8. Hata Mesajı --- */
+.error-message {
+    color: #d93025;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+/* --- 9. YENİ: Saat ve Tarih Stilleri --- */
+    #clock-container {
+        margin-bottom: 1.5rem; /* Başlık ile giriş kutuları arasına boşluk */
+        color: #555; /* Yazı rengi */
+        font-size: 1rem;
+        font-weight: 500;
+        line-height: 1.5;
+    }
+
+    #date {
+        display: block; /* Tarih üstte */
+    }
+
+    #time {
+        display: block; /* Saat altta */
+        font-size: 1.3rem; /* Saati biraz daha büyük yapalım */
+        font-weight: 600;
+        color: #111; /* Saatin rengini daha koyu yapalım */
+        margin-top: 0.25rem;
+    }
+
+    /* static/style.css (EN ALTA EKLENECEK) */
+
+/* --- MOBİL UYUMLULUK (RESPONSIVENESS) --- */
+
+/* Ekran genişliği 600 piksel veya daha AZ ise bu kurallar geçerli olur */
+@media (max-width: 600px) {
+
+    body {
+        /* Sayfanın kenarlarına biraz boşluk ekleyelim */
+        padding: 15px;
+    }
+
+    .login-container {
+        /* Kenar boşluklarını (padding) azaltalım ki kutu çok sıkışmasın */
+        padding: 1.5rem;
+        /* Gölgeyi biraz azaltabiliriz (isteğe bağlı) */
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
+        /* Maksimum genişliği kaldırabilir veya azaltabiliriz,
+           çünkü body'deki padding zaten kenarlardan boşluk bırakacak */
+        max-width: none;
+        width: 100%; /* Ekranı tamamen kaplasın (padding hariç) */
+    }
+
+    .login-logo {
+        /* Logoyu biraz küçültebiliriz */
+        max-width: 150px;
+    }
+
+    h2 {
+        /* Ana başlığı biraz küçültebiliriz */
+        font-size: 1.6rem;
+    }
+
+    .input-group input {
+        /* Giriş kutularının iç boşluğunu biraz azaltabiliriz */
+        padding: 0.85rem;
+        font-size: 0.95rem; /* Yazı boyutunu hafif küçült */
+    }
+
+    .login-button {
+        /* Butonun iç boşluğunu biraz azaltabiliriz */
+        padding: 0.85rem;
+        font-size: 0.95rem;
+    }
+
+    /* Saat ve Tarih (Eğer ekliysek) */
+    #clock-container {
+        font-size: 0.9rem;
+    }
+    #time {
+        font-size: 1.1rem;
+    }
+}
+
+/* Daha da küçük ekranlar için (örn: 400px altı) ek ayar gerekirse buraya eklenebilir
+@media (max-width: 400px) {
+    .login-logo {
+        max-width: 120px;
+    }
+    h2 {
+        font-size: 1.4rem;
+    }
+}
+*/

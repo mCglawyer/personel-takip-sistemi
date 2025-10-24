@@ -1,0 +1,33 @@
+# İşletim Sistemi dosyaları
+.DS_Store
+Thumbs.db
+
+# Sanal Ortam klasörü (ÇOK ÖNEMLİ!)
+venv/
+*.env
+
+# Python Bytecode ve Önbellek
+__pycache__/
+*.py[cod]
+
+# Geliştirme Veritabanı (Canlıda farklı kullanacağız)
+db.sqlite3
+db.sqlite3-journal
+
+# IDE/Editör Ayarları
+.vscode/
+.idea/
+
+# Django Statik Dosya Toplama Hedefi
+staticfiles/
+staticfiles_production/
+
+# Ortam Değişkenleri / Gizli Bilgiler (Eğer kullanıyorsanız)
+.env
+*.env.*
+
+# Log Dosyaları
+*.log
+
+# PythonAnywhere'e özgü dosyalar
+.python-version

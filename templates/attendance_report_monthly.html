@@ -1,0 +1,78 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ selected_branch.name }} - Aylık Puantaj ({{ selected_year }}/{{ selected_month }})</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; background-color: #f9f9f9; margin: 0;}
+        .container { max-width: 1200px; /* Biraz daha geniş olabilir */ margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 20px; }
+        .header h1 { margin: 0; font-size: 1.8rem; }
+         .header .sub-info { font-size: 1.1rem; color: #555;}
+        .header a { text-decoration: none; background-color: #007bff; color: white; padding: 8px 15px; border-radius: 5px; font-weight: 600; }
+        .report-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .report-table th, .report-table td { border: 1px solid #ddd; padding: 10px 12px; text-align: center; /* Ortala */ font-size: 0.9rem;} /* Biraz küçültebiliriz */
+        .report-table th { background-color: #f4f4f4; font-weight: 600; }
+        .report-table tbody tr:nth-child(odd) { background-color: #f9f9f9; }
+        .report-table td:first-child { text-align: left; font-weight: 500;} /* Personel ismini sola yasla */
+        /* Farklı durumlar için renkler */
+       .count-worked { color: #155724; font-weight: bold;}
+       .count-leave { color: #007bff; } /* İzin için Mavi */
+       .count-reported { color: #856404; } /* Raporlu için Koyu Sarı/Kahve */
+       .count-unexcused { color: #721c24; font-weight: bold;} /* Devamsız için Kırmızı */
+       .count-off { color: #6c757d; } /* Planlanmamış için Gri */
+       .back-to-select { margin-left: 15px; font-size: 0.9rem; color: #555;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+             <div>
+                <h1>Aylık Puantaj Raporu</h1>
+                <span class="sub-info">
+                    <strong>Şube:</strong> {{ selected_branch.name }} |
+                    <strong>Dönem:</strong> {% if selected_month == 1 %}Ocak{% elif selected_month == 2 %}Şubat{% elif selected_month == 3 %}Mart{% elif selected_month == 4 %}Nisan{% elif selected_month == 5 %}Mayıs{% elif selected_month == 6 %}Haziran{% elif selected_month == 7 %}Temmuz{% elif selected_month == 8 %}Ağustos{% elif selected_month == 9 %}Eylül{% elif selected_month == 10 %}Ekim{% elif selected_month == 11 %}Kasım{% elif selected_month == 12 %}Aralık{% endif %} {{ selected_year }}
+                     <a href="{% url 'accounts:attendance_report_select' %}" class="back-to-select">(Başka Rapor Seç)</a>
+                </span>
+            </div>
+            <a href="{% url 'accounts:dashboard' %}">Ana Panele Geri Dön</a>
+        </div>
+
+        <div class="content">
+            <table class="report-table">
+                <thead>
+    <tr>
+        <th style="width: 25%;">Personel</th>
+        <th>Çalışılan Gün</th>
+        <th>İzinli Gün</th>    {# AYRILDI #}
+        <th>Raporlu Gün</th>   {# AYRILDI #}
+        <th>Devamsız Gün</th>
+        <th>Planlanmamış Gün</th>
+        <th>Ay Toplam Gün</th>
+    </tr>
+</thead>
+                <tbody>
+    {% for data in report_data %}
+    <tr>
+        <td>{{ data.personnel.first_name }} {{ data.personnel.last_name }} ({{ data.personnel.username }})</td>
+        <td class="count-worked">{{ data.counts.worked }}</td>
+        <td class="count-leave">{{ data.counts.leave }}</td>       {# YENİ: data.counts.leave #}
+        <td class="count-reported">{{ data.counts.reported }}</td> {# YENİ: data.counts.reported #}
+        <td class="count-unexcused">{{ data.counts.unexcused }}</td>
+        <td class="count-off">{{ data.counts.off }}</td>
+        <td>{{ data.total_days }}</td> {# Ayın toplam gün sayısı #}
+    </tr>
+    {% empty %}
+    {# colspan değerini 7 yapın (yeni eklenen sütun için) #}
+    <tr>
+        <td colspan="7" style="text-align: center; padding: 20px;">Seçilen şubeye atanmış personel bulunamadı veya seçilen ay için vardiya kaydı yok.</td>
+    </tr>
+    {% endfor %}
+</tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

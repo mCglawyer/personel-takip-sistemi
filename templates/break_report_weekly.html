@@ -1,0 +1,81 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ selected_branch.name }} - Haftalık Mola Raporu</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; background-color: #f9f9f9; margin: 0;}
+        .container { max-width: 1000px; /* Rapor için biraz daha geniş olabilir */ margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 20px; flex-wrap: wrap; /* Küçük ekranlarda sığmazsa alt satıra geçsin */ }
+        .header h1 { margin: 0; font-size: 1.8rem; margin-bottom: 5px; /* Başlık altına boşluk */}
+         .header .sub-info { font-size: 1.1rem; color: #555; display: block; /* Alt satırda görünmesi için */}
+        .header a { text-decoration: none; background-color: #007bff; color: white; padding: 8px 15px; border-radius: 5px; font-weight: 600; white-space: nowrap; /* Buton metni bölünmesin */}
+        .report-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .report-table th, .report-table td { border: 1px solid #ddd; padding: 10px 12px; text-align: left; font-size: 0.95rem;}
+        .report-table th { background-color: #f4f4f4; font-weight: 600; }
+        .report-table tbody tr:nth-child(odd) { background-color: #f9f9f9; }
+        .status-active { color: #e63946; font-weight: bold; }
+        .duration { font-size: 0.85em; color: #555; white-space: nowrap; } /* Mola süresi için stil */
+        .back-to-select { margin-left: 15px; font-size: 0.9rem; color: #555;}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+             <div> {# Başlık ve alt bilgi için gruplama #}
+                <h1>Haftalık Mola Raporu</h1>
+                <span class="sub-info">
+                    <strong>Şube:</strong> {{ selected_branch.name }} |
+                    <strong>Hafta:</strong> {{ start_of_week|date:"d N" }} - {{ end_of_week|date:"d N Y" }}
+                     <a href="{% url 'accounts:break_report_select' %}" class="back-to-select">(Başka Şube Seç)</a> {# Namespace kullanıldı #}
+                </span>
+            </div>
+            <a href="{% url 'accounts:dashboard' %}">Ana Panele Geri Dön</a> {# Namespace kullanıldı #}
+        </div>
+
+        <div class="content">
+            <table class="report-table">
+                <thead>
+                    <tr>
+                        <th>Personel</th>
+                        <th>Tarih</th>
+                        <th>Başlangıç</th>
+                        <th>Bitiş / Durum</th>
+                        <th>Süre</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for break in weekly_breaks_list %} {# views.py'dan gelen liste #}
+                    <tr>
+                        <td>{{ break.personnel.username }}</td>
+                        <td>{{ break.start_time|date:"d N Y, l" }}</td> {# Günü de ekleyelim #}
+                        <td>{{ break.start_time|date:"H:i:s" }}</td>
+                        <td>
+                            {% if break.end_time %}
+                                {{ break.end_time|date:"H:i:s" }}
+                            {% else %}
+                                <span class="status-active">Devam Ediyor...</span>
+                            {% endif %}
+                        </td>
+                        <td class="duration">
+                            {# Modeldeki duration property'sini kullanıyoruz #}
+                            {% if break.duration %}
+                                {{ break.duration }}
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; padding: 20px;">Seçilen hafta için bu şubede mola kaydı bulunmamaktadır.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</body>
+</html>

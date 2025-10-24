@@ -1,0 +1,102 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Personel Yönetimi</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; background-color: #f9f9f9; }
+        .container { max-width: 1000px; margin: auto; background: #fff; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #f0f0f0; padding-bottom: 15px; margin-bottom: 20px; }
+        .header h1 { margin: 0; font-size: 1.8rem; }
+        .header .controls a { text-decoration: none; background-color: #28a745; color: white; padding: 8px 15px; border-radius: 5px; font-weight: 600; margin-left: 10px;}
+         .header .controls a.back-link { background-color: #6c757d;} /* Gri renk */
+
+        .personnel-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .personnel-table th, .personnel-table td { border: 1px solid #ddd; padding: 10px 12px; text-align: left; font-size: 0.95rem;}
+        .personnel-table th { background-color: #f4f4f4; font-weight: 600; }
+        .personnel-table tbody tr:nth-child(odd) { background-color: #f9f9f9; }
+        .status-active { color: #155724; font-weight: bold; }
+        .status-inactive { color: #721c24; font-weight: bold; font-style: italic; }
+        .action-button { background: none; border: none; padding: 5px 8px; cursor: pointer; border-radius: 4px; font-weight: 500;}
+        .action-button.deactivate { background-color: #ffc107; color: #333;}
+        .action-button.activate { background-color: #28a745; color: white;}
+        .action-button:hover { opacity: 0.8; }
+        /* Başarı/Uyarı Mesajı Stili */
+        .alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px; }
+        .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
+        .alert-warning { color: #856404; background-color: #fff3cd; border-color: #ffeeba; }
+        .alert-error { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Personel Yönetimi</h1>
+            <div class="controls">
+                <a href="{% url 'accounts:personnel_add' %}" class="add-link">Yeni Personel Ekle</a>
+                <a href="{% url 'accounts:dashboard' %}" class="back-link">Ana Panele Dön</a>
+            </div>
+        </div>
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags|default:'info' }}">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <table class="personnel-table">
+            <thead>
+                <tr>
+                    <th>Kullanıcı Adı</th>
+                    <th>Adı Soyadı</th>
+                    <th>Atandığı Şube</th>
+                    <th>Hesap Durumu</th>
+                    <th>İşlemler</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p_user in personnel_list %} {# views.py'dan gelen liste #}
+                <tr>
+                    <td>{{ p_user.username }}</td>
+                    <td>{{ p_user.first_name }} {{ p_user.last_name }}</td>
+                    {# Profile ve branch ilişkili olarak çekildiği için veritabanına tekrar sormaz #}
+                    <td>{{ p_user.profile.branch.name|default:"Atanmamış" }}</td>
+                    <td>
+                        {% if p_user.is_active %}
+                            <span class="status-active">Aktif</span>
+                        {% else %}
+                            <span class="status-inactive">Dondurulmuş</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if p_user.is_active %}
+                            {# Dondurma butonu (POST formu içinde) #}
+                            <form method="POST" action="{% url 'accounts:personnel_deactivate' p_user.id %}" style="display: inline;" onsubmit="return confirm('{{ p_user.username }} kullanıcısını dondurmak istediğinizden emin misiniz?');">
+                                {% csrf_token %}
+                                <button type="submit" class="action-button deactivate">Dondur</button>
+                            </form>
+                        {% else %}
+                            {# Aktifleştirme butonu (POST formu içinde) #}
+                            <form method="POST" action="{% url 'accounts:personnel_activate' p_user.id %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="action-button activate">Aktifleştir</button>
+                            </form>
+                        {% endif %}
+                        {# Buraya "Düzenle" linki de eklenebilir (Django admin'e veya özel bir sayfaya) #}
+                        <a href="/admin/auth/user/{{ p_user.id }}/change/" target="_blank" style="margin-left: 10px; font-size: 0.85em;">Detay/Düzenle</a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center;">Yönetilecek personel bulunamadı.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

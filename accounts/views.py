@@ -16,6 +16,8 @@ import calendar # Aylık puantaj raporu için
 import json # FullCalendar için JSON işlemleri
 from django.core.mail import send_mail # E-posta göndermek için
 from django.conf import settings # settings.py'daki e-posta ayarlarını almak için
+from .forms import PersonnelAddForm, LeaveRequestForm, UserProfileUpdateForm
+
 
 # Modellerimizi ve vardiya tipleri listesini models.py'dan import ediyoruz
 from .models import Branch, Break, Shift, SHIFT_TYPES, Profile, LeaveRequest
@@ -170,26 +172,55 @@ def dashboard_view(request):
 # --------------------------------------------------------------------------
 @login_required(login_url='login')
 def profile_view(request):
-    """Kullanıcının profil bilgilerini gösterir ve şifre değiştirmesine olanak tanır."""
+    """Kullanıcının profil bilgilerini gösterir, temel bilgilerini
+       güncellemesine ve şifre değiştirmesine olanak tanır."""
     user = request.user
+
+    # Formları başlangıçta kullanıcının mevcut bilgileriyle doldur
+    user_form = UserProfileUpdateForm(instance=user)
     password_form = PasswordChangeForm(user=user)
 
-    if request.method == 'POST' and 'change_password' in request.POST:
-        password_form = PasswordChangeForm(user=user, data=request.POST)
-        if password_form.is_valid():
-            updated_user = password_form.save()
-            update_session_auth_hash(request, updated_user) # Oturumu güncel tut
-            messages.success(request, 'Şifreniz başarıyla güncellendi!')
-            return redirect('accounts:profile') # Aynı sayfaya geri dön
-        else:
-            messages.error(request, 'Şifre değiştirilemedi. Lütfen hataları kontrol edin.')
+    # Eğer form gönderildiyse (POST)
+    if request.method == 'POST':
+        # Hangi formun gönderildiğini butona göre anla
+        if 'update_profile' in request.POST:
+            # --- Profil Bilgilerini Güncelleme ---
+            user_form = UserProfileUpdateForm(request.POST, instance=user)
+            if user_form.is_valid():
+                user_form.save() # Değişiklikleri User modeline kaydet
+                messages.success(request, 'Profil bilgileriniz başarıyla güncellendi!')
+                # Başarı sonrası aynı sayfaya yönlendir (mesajı görmek için)
+                return redirect('accounts:profile')
+            else:
+                messages.error(request, 'Profil güncellenemedi. Lütfen hataları kontrol edin.')
+                # Şifre formunu tekrar boş olarak oluştur (kullanıcı eski şifreyi tekrar girmesin)
+                password_form = PasswordChangeForm(user=user) # Hata varsa şifre formu sıfırlansın
 
+        elif 'change_password' in request.POST:
+            # --- Şifre Değiştirme ---
+            password_form = PasswordChangeForm(user=user, data=request.POST)
+            if password_form.is_valid():
+                updated_user = password_form.save()
+                update_session_auth_hash(request, updated_user) # Oturumu güncel tut
+                messages.success(request, 'Şifreniz başarıyla güncellendi!')
+                return redirect('accounts:profile') # Aynı sayfaya yönlendir
+            else:
+                messages.error(request, 'Şifre değiştirilemedi. Lütfen hataları kontrol edin.')
+                # Kullanıcı bilgilerini içeren formu tekrar oluştur (sayfa yenilendiğinde kaybolmasın)
+                user_form = UserProfileUpdateForm(instance=user) # Hata varsa kullanıcı formu korunsun
+
+    # Kullanıcının profil bilgilerini al (Şube için)
     try:
         profile = user.profile
     except Profile.DoesNotExist:
-        profile = None # Profil yoksa (olmamalı)
+        profile = None
 
-    context = { 'user': user, 'profile': profile, 'password_form': password_form }
+    context = {
+        'user': user,
+        'profile': profile,
+        'user_form': user_form,         # Profil güncelleme formu
+        'password_form': password_form, # Şifre değiştirme formu
+    }
     return render(request, 'profile.html', context)
 
 # --------------------------------------------------------------------------

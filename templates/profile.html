@@ -12,14 +12,25 @@
         .profile-info p { margin-bottom: 10px; font-size: 1.1rem;}
         .profile-info strong { display: inline-block; min-width: 150px; color: #555;}
 
-        /* Şifre Formu Stilleri */
+        /* Form Stilleri */
+        form { margin-bottom: 30px; } /* Formlar arasına boşluk */
         form p { margin-bottom: 15px; }
         form label { display: block; margin-bottom: 5px; font-weight: 500; }
-        form input[type="password"] { width: 100%; max-width: 400px; /* Çok geniş olmasın */ padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+        /* Inputlar için genel stil */
+        form input[type="text"],
+        form input[type="email"],
+        form input[type="password"],
+        form select,
+        .form-control { /* forms.py'da eklediğimiz class */
+            width: 100%; max-width: 400px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem;
+        }
         .helptext { font-size: 0.85em; color: #666; margin-top: 3px;}
         ul.errorlist { color: #dc3545; list-style: none; padding: 0; margin: 5px 0 10px 0; font-size: 0.9em;}
         .submit-button { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 1rem; cursor: pointer; transition: background-color 0.2s ease; margin-top: 10px;}
         .submit-button:hover { background-color: #0056b3; }
+        .submit-button.update-profile { background-color: #28a745; } /* Yeşil buton */
+        .submit-button.update-profile:hover { background-color: #218838; }
+
         .back-link { display: block; margin-top: 30px; color: #555; text-decoration: none;}
 
          /* Başarı/Uyarı Mesajı Stili */
@@ -40,20 +51,28 @@
             {% endfor %}
         {% endif %}
 
-        <div class="profile-info">
+        {# Değiştirilemeyen Bilgiler #}
+        <div class="profile-info" style="margin-bottom: 30px;">
             <p><strong>Kullanıcı Adı:</strong> {{ user.username }}</p>
-            <p><strong>Adı:</strong> {{ user.first_name|default:"-" }}</p>
-            <p><strong>Soyadı:</strong> {{ user.last_name|default:"-" }}</p>
-            <p><strong>E-posta:</strong> {{ user.email|default:"-" }}</p>
             <p><strong>Atandığı Şube:</strong> {{ profile.branch.name|default:"Atanmamış" }}</p>
-            {# <p><strong>Son Giriş:</strong> {{ user.last_login|date:"d N Y, H:i" }}</p> #}
-            {# <p><strong>Kayıt Tarihi:</strong> {{ user.date_joined|date:"d N Y" }}</p> #}
         </div>
 
+        {# Profil Bilgilerini Güncelleme Formu #}
+        <h2>Bilgileri Güncelle</h2>
+        <form method="POST">
+            {% csrf_token %}
+            {{ user_form.as_p }} {# Ad, Soyad, E-posta formu #}
+            {# Butona isim vererek formu ayırt ediyoruz #}
+            <button type="submit" name="update_profile" class="submit-button update-profile">Bilgilerimi Güncelle</button>
+        </form>
+
+        <hr style="margin: 40px 0;"> {# Ayırıcı #}
+
+        {# Şifre Değiştirme Formu #}
         <h2>Şifre Değiştir</h2>
         <form method="POST">
             {% csrf_token %}
-            {{ password_form.as_p }} {# Formu paragraf etiketleri içinde göster #}
+            {{ password_form.as_p }} {# Eski şifre, Yeni şifre, Yeni şifre tekrar #}
             {# Butona isim vererek formu ayırt ediyoruz #}
             <button type="submit" name="change_password" class="submit-button">Şifremi Güncelle</button>
         </form>

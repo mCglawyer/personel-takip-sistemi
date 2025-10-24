@@ -118,3 +118,34 @@ class LeaveRequestForm(forms.ModelForm):
         #         self.add_error(None, f"Maksimum izin süresi 30 gündür. ({duration} gün talep edildi).")
 
         return cleaned_data
+    
+    # accounts/forms.py (EN ALTA EKLENECEK)
+
+# 3. KULLANICI PROFİL GÜNCELLEME FORMU (Temel Bilgiler)
+class UserProfileUpdateForm(forms.ModelForm):
+    """Kullanıcının kendi Ad, Soyad ve E-posta bilgilerini güncellemesi için form."""
+    class Meta:
+        model = User # Django'nun User modelini kullan
+        # Sadece bu alanlar düzenlenebilsin
+        fields = ['first_name', 'last_name', 'email']
+        labels = { # Alan etiketlerini Türkçeleştir
+            'first_name': 'Adınız',
+            'last_name': 'Soyadınız',
+            'email': 'E-posta Adresiniz',
+        }
+        help_texts = {
+            'email': 'İsteğe bağlı. Bildirimler için kullanılabilir.',
+        }
+        widgets = { # Daha iyi görünüm için input tiplerini belirleyelim
+            'first_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+        }
+
+    # E-posta adresinin benzersiz olup olmadığını kontrol edebiliriz (opsiyonel)
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        # Eğer e-posta girilmişse ve bu e-posta BAŞKA BİR kullanıcıya aitse hata ver
+        if email and User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError("Bu e-posta adresi zaten başka bir kullanıcı tarafından kullanılıyor.")
+        return email

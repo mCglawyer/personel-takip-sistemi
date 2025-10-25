@@ -24,14 +24,11 @@ SECRET_KEY = 'django-insecure-=gizli_anahtar_buraya=)uf*s%7&^c' # Örnek, sizdek
 # ama ALLOWED_HOSTS'u ayarlamak önemlidir.
 DEBUG = True
 
-# CANLI ORTAM ALAN ADLARINIZI BURAYA EKLEYİN!
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
-    'personel-takip-sistem-yirl.onrender.com', # Render HOST ADINIZ (Önceki hatadan aldık)
-    # Gelecekte özel alan adınız olursa buraya ekleyin:
-    # 'www.siteadi.com',
-    # 'siteadi.com',
+    'personel-takip-sistemi-yirl.onrender.com', # BU SATIRIN EKLENDİĞİNDEN EMİN OLUN
+    # Eğer özel alan adınız varsa o da burada olmalı
 ]
 
 

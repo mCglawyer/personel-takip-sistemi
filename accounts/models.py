@@ -76,7 +76,7 @@ class Shift(models.Model):
     date = models.DateField(verbose_name="Tarih")
     # Seçilen vardiya tipi veya durumu (yukarıdaki SHIFT_TYPES listesinden)
     shift_type = models.CharField(
-        max_length=10,
+        max_length=15,
         choices=SHIFT_TYPES,
         verbose_name="Vardiya Tipi / Durum"
     )

@@ -7,7 +7,6 @@ Django settings for shift_takip project.
 import os
 from pathlib import Path
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -22,7 +21,7 @@ SECRET_KEY = 'django-insecure-=gizli_anahtar_buraya=)uf*s%7&^c' # Örnek, sizdek
 DEBUG = True # Geliştirme için True, Canlıya alırken False yapılmalı!
 
 # Canlıya alırken buraya alan adlarınızı eklemelisiniz. Örn: ['www.siteadi.com', 'siteadi.com']
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.1.166']
+ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.1.104','personel-takip-sistemi-yirl.onrender.com']
 
 
 # Application definition
@@ -183,5 +182,3 @@ PWA_APP_ICONS_APPLE = [
     # Apple ikonu için de doğru dosya adını kontrol edin (örn: apple-touch-icon.png veya 180.png)
     {'src': '/static/images/icons/180.png', 'sizes': '180x180'} # Örnek, sizdeki farklıysa değiştirin
 ]
-# PWA_APP_SPLASH_SCREEN = [...] # İsteğe bağlı
-# PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR, 'static/js', 'serviceworker.js') # Özel SW için

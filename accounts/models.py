@@ -58,7 +58,7 @@ SHIFT_TYPES = [
     ('ARACI',   'Aracı (11:30 - 20:30)'),
     ('AKSAM',   'Akşamcı (15:30 - 00:30)'),
     ('ETKINLIK','Etkinlik (Manuel Saat)'),
-    ('FAZLA_MESAI', 'Fazla Mesai (Manuel Saat)')
+    ('FAZLA_MESAI', 'Fazla Mesai (Manuel Saat)'),
     # Durumlar (Saatsiz)
     ('IZIN',    'İzinli'),
     ('RAPORLU', 'Raporlu'),    # Yeni eklendi

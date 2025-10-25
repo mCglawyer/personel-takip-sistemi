@@ -96,31 +96,38 @@ class Shift(models.Model):
     custom_start_time = models.TimeField(null=True, blank=True, verbose_name="Etkinlik Başlangıç Saati")
     custom_end_time = models.TimeField(null=True, blank=True, verbose_name="Etkinlik Bitiş Saati")
 
-    # Django'nun save metodunu override ederek saatleri otomatik hesaplıyoruz.
-    def save(self, *args, **kwargs):
-        """Kayıt veritabanına kaydedilmeden önce start_time ve end_time'ı hesaplar."""
-        tz = timezone.get_current_timezone() # Proje saat dilimini al (settings.py'dan)
-        self.start_time = None # Önceki değerleri temizle
-        self.end_time = None
+   # accounts/models.py -> Shift modelinin içindeki save fonksiyonu
 
-        # Sadece belirli vardiya tipleri için saat hesaplaması yap
-        if self.shift_type == 'SABAH':
-            start_dt = datetime.combine(self.date, time(7, 30))
-            end_dt = datetime.combine(self.date, time(16, 30))
-            self.start_time = timezone.make_aware(start_dt, tz)
-            self.end_time = timezone.make_aware(end_dt, tz)
-        elif self.shift_type == 'ARACI':
-            start_dt = datetime.combine(self.date, time(11, 30))
-            end_dt = datetime.combine(self.date, time(20, 30))
-            self.start_time = timezone.make_aware(start_dt, tz)
-            self.end_time = timezone.make_aware(end_dt, tz)
-        elif self.shift_type == 'AKSAM':
-            start_dt = datetime.combine(self.date, time(15, 30))
-            end_date = self.date + timedelta(days=1) # Gece yarısını aşıyor
-            end_dt = datetime.combine(end_date, time(0, 30))
-            self.start_time = timezone.make_aware(start_dt, tz)
-            self.end_time = timezone.make_aware(end_dt, tz)
-        elif self.shift_type == 'ETKINLIK' or self.shift_type == 'FAZLA_MESAI': # 'FAZLA_MESAI' eklendi
+# Akıllı Kaydetme Fonksiyonu
+def save(self, *args, **kwargs):
+    # Admin 'Kaydet'e bastığında bu fonksiyon çalışacak
+    tz = timezone.get_current_timezone()
+    self.start_time = None # Önce saatleri sıfırla
+    self.end_time = None
+
+    if self.shift_type == 'SABAH':
+        start_dt = datetime.combine(self.date, time(7, 30))
+        end_dt = datetime.combine(self.date, time(16, 30))
+        self.start_time = timezone.make_aware(start_dt, tz)
+        self.end_time = timezone.make_aware(end_dt, tz)
+
+    elif self.shift_type == 'ARACI':
+        start_dt = datetime.combine(self.date, time(11, 30))
+        end_dt = datetime.combine(self.date, time(20, 30))
+        self.start_time = timezone.make_aware(start_dt, tz)
+        self.end_time = timezone.make_aware(end_dt, tz)
+
+    elif self.shift_type == 'AKSAM':
+        start_dt = datetime.combine(self.date, time(15, 30))
+        end_date = self.date + timedelta(days=1) # Gece yarısını aşıyor
+        end_dt = datetime.combine(end_date, time(0, 30))
+        self.start_time = timezone.make_aware(start_dt, tz)
+        self.end_time = timezone.make_aware(end_dt, tz)
+
+    # HATA MUHTEMELEN BURADAYDI:
+    # Bu 'elif' bloğundan sonraki 'if' bloğu 4 boşluk içeride olmalı.
+    elif self.shift_type == 'ETKINLIK' or self.shift_type == 'FAZLA_MESAI':
+        # --- BU BLOK İÇERİDE OLMALI ---
         if self.custom_start_time and self.custom_end_time:
             start_dt = datetime.combine(self.date, self.custom_start_time)
             end_dt = datetime.combine(self.date, self.custom_end_time)
@@ -131,10 +138,11 @@ class Shift(models.Model):
 
             self.start_time = timezone.make_aware(start_dt, tz)
             self.end_time = timezone.make_aware(end_dt, tz)
+        # --- GIRINTILI BLOK SONU ---
 
     # 'IZIN', 'RAPORLU', 'DEVAMSIZ' seçilirse, start_time ve end_time None kalır.
 
-    super().save(*args, **kwargs)
+    super().save(*args, **kwargs) # Değişiklikleri veritabanına kaydet
 
     def __str__(self):
         """Admin panelinde daha okunaklı gösterim."""

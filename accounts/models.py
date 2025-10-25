@@ -58,6 +58,7 @@ SHIFT_TYPES = [
     ('ARACI',   'Aracı (11:30 - 20:30)'),
     ('AKSAM',   'Akşamcı (15:30 - 00:30)'),
     ('ETKINLIK','Etkinlik (Manuel Saat)'),
+    ('FAZLA_MESAI', 'Fazla Mesai (Manuel Saat)')
     # Durumlar (Saatsiz)
     ('IZIN',    'İzinli'),
     ('RAPORLU', 'Raporlu'),    # Yeni eklendi
@@ -119,19 +120,21 @@ class Shift(models.Model):
             end_dt = datetime.combine(end_date, time(0, 30))
             self.start_time = timezone.make_aware(start_dt, tz)
             self.end_time = timezone.make_aware(end_dt, tz)
-        elif self.shift_type == 'ETKINLIK' and self.custom_start_time and self.custom_end_time:
+        elif self.shift_type == 'ETKINLIK' or self.shift_type == 'FAZLA_MESAI': # 'FAZLA_MESAI' eklendi
+        if self.custom_start_time and self.custom_end_time:
             start_dt = datetime.combine(self.date, self.custom_start_time)
             end_dt = datetime.combine(self.date, self.custom_end_time)
-            # Etkinlik de gece yarısını aşabilir
-            if self.custom_end_time < self.custom_start_time:
-                end_date = self.date + timedelta(days=1)
-                end_dt = datetime.combine(end_date, self.custom_end_time)
+
+            if self.custom_end_time < self.custom_start_time: # Gece yarısını aşıyor mu?
+                 end_date = self.date + timedelta(days=1)
+                 end_dt = datetime.combine(end_date, self.custom_end_time)
+
             self.start_time = timezone.make_aware(start_dt, tz)
             self.end_time = timezone.make_aware(end_dt, tz)
 
-        # 'IZIN', 'RAPORLU', 'DEVAMSIZ' durumlarında start_time ve end_time None kalır.
+    # 'IZIN', 'RAPORLU', 'DEVAMSIZ' seçilirse, start_time ve end_time None kalır.
 
-        super().save(*args, **kwargs) # Hesaplamalar bittikten sonra asıl kaydetme işlemini yap
+    super().save(*args, **kwargs)
 
     def __str__(self):
         """Admin panelinde daha okunaklı gösterim."""

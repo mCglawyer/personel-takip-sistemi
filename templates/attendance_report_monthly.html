@@ -23,6 +23,8 @@
        .count-reported { color: #856404; } /* Raporlu için Koyu Sarı/Kahve */
        .count-unexcused { color: #721c24; font-weight: bold;} /* Devamsız için Kırmızı */
        .count-off { color: #6c757d; } /* Planlanmamış için Gri */
+       .count-overtime-days { color: #007bff; font-weight: bold; }
+       .count-overtime-hours { color: #007bff; }
        .back-to-select { margin-left: 15px; font-size: 0.9rem; color: #555;}
     </style>
 </head>
@@ -46,28 +48,34 @@
     <tr>
         <th style="width: 25%;">Personel</th>
         <th>Çalışılan Gün</th>
-        <th>İzinli Gün</th>    {# AYRILDI #}
-        <th>Raporlu Gün</th>   {# AYRILDI #}
+        <th>İzinli Gün</th>
+        <th>Raporlu Gün</th>
         <th>Devamsız Gün</th>
-        <th>Planlanmamış Gün</th>
-        <th>Ay Toplam Gün</th>
+        <th>Fazla Mesai (Gün)</th> {# YENİ SÜTUN #}
+        <th>Fazla Mesai (Saat)</th> {# YENİ SÜTUN #}
+        <th>Planlanmamış</th>
+        <th>Ay Toplam</th>
     </tr>
 </thead>
-                <tbody>
+               <tbody>
     {% for data in report_data %}
     <tr>
         <td>{{ data.personnel.first_name }} {{ data.personnel.last_name }} ({{ data.personnel.username }})</td>
         <td class="count-worked">{{ data.counts.worked }}</td>
-        <td class="count-leave">{{ data.counts.leave }}</td>       {# YENİ: data.counts.leave #}
-        <td class="count-reported">{{ data.counts.reported }}</td> {# YENİ: data.counts.reported #}
+        <td class="count-leave">{{ data.counts.leave }}</td>
+        <td class="count-reported">{{ data.counts.reported }}</td>
         <td class="count-unexcused">{{ data.counts.unexcused }}</td>
+        {# YENİ SÜTUNLAR #}
+        <td class="count-overtime-days">{{ data.counts.overtime_days }}</td>
+        <td class="count-overtime-hours">{{ data.counts.overtime_hours|floatformat:"1" }}</td> {# Saatleri göster (örn: 4.5) #}
+
         <td class="count-off">{{ data.counts.off }}</td>
-        <td>{{ data.total_days }}</td> {# Ayın toplam gün sayısı #}
+        <td>{{ data.total_days }}</td>
     </tr>
     {% empty %}
-    {# colspan değerini 7 yapın (yeni eklenen sütun için) #}
+    {# Colspan'i 9'a çıkarın #}
     <tr>
-        <td colspan="7" style="text-align: center; padding: 20px;">Seçilen şubeye atanmış personel bulunamadı veya seçilen ay için vardiya kaydı yok.</td>
+        <td colspan="9" style="text-align: center; padding: 20px;">...</td>
     </tr>
     {% endfor %}
 </tbody>

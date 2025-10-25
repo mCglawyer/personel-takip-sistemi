@@ -143,6 +143,12 @@ def dashboard_view(request):
             elif shift.shift_type == 'IZIN':    event_title, event_color, border_color, text_color = "İzinli", '#f6f6f6', '#d9d9d9', '#555'
             elif shift.shift_type == 'RAPORLU': event_title, event_color, border_color, text_color = "Raporlu", '#fff3cd', '#ffeeba', '#856404'
             elif shift.shift_type == 'DEVAMSIZ':event_title, event_color, border_color, text_color = "Devamsız", '#f8d7da', '#f5c6cb', '#721c24'
+            elif shift.shift_type == 'FAZLA_MESAI':
+             event_title = "Fazla Mesai"
+             event_color, border_color = '#d4edda', '#c3e6cb' # Yeşil tonu (Raporlu sarısından farklı)
+             text_color = '#155724'
+             if shift.start_time and shift.end_time:
+                 event_title = f"Fazla Mesai ({shift.start_time.strftime('%H:%M')} - {shift.end_time.strftime('%H:%M')})"
             elif shift.shift_type == 'ETKINLIK':
                  event_color, border_color = '#f9f0ff', '#d3adf7'
                  if shift.start_time and shift.end_time:
@@ -343,21 +349,69 @@ def attendance_report_monthly_view(request, branch_id, year, month):
     except ValueError: messages.error(request, "Geçersiz tarih seçimi."); return redirect('accounts:attendance_report_select')
     personnel_in_branch = User.objects.filter(is_superuser=False, profile__branch=branch, is_active=True).order_by('username').select_related('profile')
     shifts_in_month = Shift.objects.filter(personnel__in=personnel_in_branch, date__gte=start_date, date__lte=end_date).select_related('personnel')
-    shifts_map = {};
-    for shift in shifts_in_month: p_id = shift.personnel.id; day_date = shift.date; shifts_map.setdefault(p_id, {})[day_date] = shift.shift_type
-    report_data = []; days_in_month = [start_date + timedelta(days=i) for i in range(num_days)]
-    work_types = ['SABAH', 'ARACI', 'AKSAM', 'ETKINLIK']; unexcused_types = ['DEVAMSIZ']
+    shifts_map = {}
+    for shift in shifts_in_month:
+        p_id = shift.personnel.id
+        day_date = shift.date
+        if p_id not in shifts_map:
+            shifts_map[p_id] = {}
+        shifts_map[p_id][day_date] = shift # shift.shift_type yerine shift objesinin tamamını sakla
+
+    # 5. Rapor Verisini Hesapla (GÜNCELLENDİ)
+    report_data = []
+    days_in_month = [start_date + timedelta(days=i) for i in range(num_days)]
+
+    # Vardiya/Durum tiplerini tanımla
+    work_types = ['SABAH', 'ARACI', 'AKSAM', 'ETKINLIK'] # Etkinlik normal çalışma sayılır
+    unexcused_types = ['DEVAMSIZ']
+    # 'IZIN' ve 'RAPORLU' ayrı ele alınacak
+
     for p in personnel_in_branch:
-        p_id = p.id; counts = {'worked': 0, 'leave': 0, 'reported': 0, 'unexcused': 0, 'off': 0}
+        p_id = p.id
+        # counts sözlüğüne 'overtime_days' ve 'overtime_hours' ekle
+        counts = {
+            'worked': 0, 'leave': 0, 'reported': 0, 'unexcused': 0, 'off': 0,
+            'overtime_days': 0,
+            'overtime_hours': timedelta(0) # Toplam süreyi tutmak için timedelta
+        }
+
         for day_date in days_in_month:
-            shift_type = shifts_map.get(p_id, {}).get(day_date)
-            if shift_type in work_types: counts['worked'] += 1
-            elif shift_type == 'IZIN': counts['leave'] += 1
-            elif shift_type == 'RAPORLU': counts['reported'] += 1
-            elif shift_type in unexcused_types: counts['unexcused'] += 1
-            else: counts['off'] += 1
-        report_data.append({'personnel': p, 'counts': counts, 'total_days': num_days})
-    context = {'user': request.user, 'selected_branch': branch, 'selected_year': year, 'selected_month': month, 'start_date': start_date, 'end_date': end_date, 'report_data': report_data}
+            # O günkü tüm shift objesini al (varsa)
+            shift_obj = shifts_map.get(p_id, {}).get(day_date)
+            shift_type = shift_obj.shift_type if shift_obj else None # Tipini al
+
+            # if/elif yapısını güncelle
+            if shift_type in work_types:
+                counts['worked'] += 1
+            elif shift_type == 'IZIN':
+                counts['leave'] += 1
+            elif shift_type == 'RAPORLU':
+                counts['reported'] += 1
+            elif shift_type in unexcused_types:
+                counts['unexcused'] += 1
+
+            # YENİ BLOK: Fazla Mesaiyi Ayrı Say
+            elif shift_type == 'FAZLA_MESAI':
+                counts['overtime_days'] += 1
+                # Eğer saatleri hesaplanmışsa (manuel girilmişse) süreyi topla
+                if shift_obj and shift_obj.start_time and shift_obj.end_time:
+                    duration = shift_obj.end_time - shift_obj.start_time
+                    counts['overtime_hours'] += duration
+
+            else: # Kayıt yoksa ('off')
+                counts['off'] += 1
+
+        report_data.append({
+            'personnel': p,
+            'counts': counts, # Güncellenmiş counts sözlüğü
+            'total_days': num_days
+        })
+
+    # 6. Veriyi Template'e Gönder (Aynı kalır)
+    context = {
+        # ... (diğer context verileri aynı) ...
+        'report_data': report_data, # Artık yeni counts yapısını içeriyor
+    }
     return render(request, 'attendance_report_monthly.html', context)
 
 # --------------------------------------------------------------------------

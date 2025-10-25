@@ -1,4 +1,4 @@
-# shift_takip/settings.py (En Güncel ve Tam Hali - PWA İkon Yolları Düzeltildi - 23 Ekim 2025)
+# shift_takip/settings.py (En Güncel ve Tam Hali - Render Dağıtımı İçin Hazır - 25 Ekim 2025)
 
 """
 Django settings for shift_takip project.
@@ -7,6 +7,7 @@ Django settings for shift_takip project.
 import os
 from pathlib import Path
 
+# Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
@@ -18,10 +19,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-=gizli_anahtar_buraya=)uf*s%7&^c' # Örnek, sizdeki farklıdır
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True # Geliştirme için True, Canlıya alırken False yapılmalı!
+# Render gibi platformlar genellikle bu ayarı ortam değişkeniyle yönetir.
+# Yerelde True, Canlıda False olmalı. Şimdilik True bırakabiliriz,
+# ama ALLOWED_HOSTS'u ayarlamak önemlidir.
+DEBUG = True
 
-# Canlıya alırken buraya alan adlarınızı eklemelisiniz. Örn: ['www.siteadi.com', 'siteadi.com']
-ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.1.104','personel-takip-sistemi-yirl.onrender.com']
+# CANLI ORTAM ALAN ADLARINIZI BURAYA EKLEYİN!
+ALLOWED_HOSTS = [
+    '127.0.0.1',
+    'localhost',
+    'personel-takip-sistem-yirl.onrender.com', # Render HOST ADINIZ (Önceki hatadan aldık)
+    # Gelecekte özel alan adınız olursa buraya ekleyin:
+    # 'www.siteadi.com',
+    # 'siteadi.com',
+]
 
 
 # Application definition
@@ -44,6 +55,8 @@ INSTALLED_APPS = [app for app in INSTALLED_APPS if app is not None]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    # Whitenoise Middleware (Render statik dosyaları için önerilir - DEBUG=False iken)
+    # 'whitenoise.middleware.WhiteNoiseMiddleware', # Şimdilik yorumda kalsın
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -83,18 +96,30 @@ WSGI_APPLICATION = 'shift_takip.wsgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-# Geliştirme için SQLite kullanıyoruz. Canlıda PostgreSQL veya MySQL tercih edilir.
+# CANLI ORTAMDA (Render) PostgreSQL/MySQL kullanılmalı.
+# PythonAnywhere adımında eklediğimiz DB ayarlarını Render için de uyarlamanız gerekir.
+# Şimdilik yerel SQLite ayarı duruyor. Render'a dağıtım yaparken
+# Render'ın Databases bölümünden aldığınız bilgilerle burayı güncellemelisiniz.
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        # --- RENDER POSTGRESQL ÖRNEĞİ (Yorumda) ---
+        # Render, veritabanı bağlantı bilgisini genellikle DATABASE_URL
+        # adında bir ortam değişkeni olarak verir. django-environ gibi bir
+        # paketle bunu okumak daha iyidir ama manuel olarak da eklenebilir.
+        # DİKKAT: Render'da veritabanı oluşturduktan sonra bu bilgileri girin.
+        # 'ENGINE': 'django.db.backends.postgresql',
+        # 'NAME': 'render_db_adı',
+        # 'USER': 'render_kullanıcı_adı',
+        # 'PASSWORD': 'render_db_sifresi',
+        # 'HOST': 'render_db_host_adresi.oregon-postgres.render.com', # Örnek
+        # 'PORT': '5432', # Genellikle standart port
     }
 }
 
 
 # Password validation
-# https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
-
 AUTH_PASSWORD_VALIDATORS = [
     { 'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator', },
     { 'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator', },
@@ -104,57 +129,41 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/5.0/topics/i18n/
-
-LANGUAGE_CODE = 'tr-TR' # Dil kodunu Türkçe yaptık
-
-TIME_ZONE = 'Europe/Istanbul' # Saat dilimini Türkiye olarak ayarladık
-
-USE_I18N = True # Uluslararasılaştırmayı etkinleştir (Dil çevirileri için)
-
-USE_TZ = True # Saat dilimi desteğini etkinleştir
+LANGUAGE_CODE = 'tr-TR'
+TIME_ZONE = 'Europe/Istanbul'
+USE_I18N = True
+USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.0/howto/static-files/
-
-STATIC_URL = 'static/' # Statik dosyaların tarayıcıda hangi URL altında sunulacağı
-
+STATIC_URL = 'static/'
 # Geliştirme sırasında statik dosyaların bulunacağı ek klasörler
 STATICFILES_DIRS = [
-    BASE_DIR / 'static', # Proje genelindeki 'static' klasörü
+    BASE_DIR / 'static', # Proje geneli static klasörü
 ]
+# CANLI ORTAM İÇİN ZORUNLU: 'collectstatic' komutunun dosyaları toplayacağı yer.
+# Render'daki 'Static Files' -> 'Publish directory' ayarıyla eşleşmeli.
+STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Canlıya alırken 'collectstatic' komutunun dosyaları toplayacağı klasör (DEBUG=False iken gerekli)
-# STATIC_ROOT = BASE_DIR / 'staticfiles_production'
+# Whitenoise için (DEBUG=False iken statik dosyaları sunmaya yardımcı olur - opsiyonel)
+# STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
 # Default primary key field type
-# https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # --------------------------------------------------------------------------
 # E-POSTA AYARLARI
 # --------------------------------------------------------------------------
-
-# Geliştirme için: E-postaları göndermek yerine konsola yazdır.
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-DEFAULT_FROM_EMAIL = 'webmaster@localhost' # Konsol backend için varsayılan gönderici
-
-# Canlıya alındığında gerçek SMTP ayarları buraya gelecek
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend' # Geliştirme için konsol
+DEFAULT_FROM_EMAIL = 'webmaster@localhost'
+# Canlı ayarları yorumda
 # EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-# EMAIL_HOST = 'smtp.example.com'
-# EMAIL_PORT = 587
-# EMAIL_USE_TLS = True
-# EMAIL_HOST_USER = 'your-email@example.com'
-# EMAIL_HOST_PASSWORD = 'your-email-password-or-app-password'
-# DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+# ... (Diğer SMTP ayarları Render'da Ortam Değişkeni olarak ayarlanabilir) ...
 
 # --------------------------------------------------------------------------
-# PWA (Progressive Web App) Ayarları (django-pwa paketi için)
+# PWA (Progressive Web App) Ayarları
 # --------------------------------------------------------------------------
-
 PWA_APP_NAME = 'Personel Takip Sistemi'
 PWA_APP_SHORT_NAME = 'PersonelTakip'
 PWA_APP_DESCRIPTION = "Şirket personeli için vardiya ve mola takip sistemi"
@@ -162,13 +171,12 @@ PWA_APP_BACKGROUND_COLOR = '#FFFFFF'
 PWA_APP_THEME_COLOR = '#007bff'
 PWA_APP_DISPLAY = 'standalone'
 PWA_APP_SCOPE = '/'
-PWA_APP_START_URL = '/' # Ana sayfaya (giriş ekranı) yönlendirsin
-# PWA_APP_ORIENTATION = 'any'
+PWA_APP_START_URL = '/'
 
 # İKON YOLLARI KONTROL EDİLDİ VE GÜNCELLENDİ (Sizin klasör yapınıza göre)
 # static/images/icons/ KLASÖRÜNDEKİ GERÇEK DOSYA ADLARIYLA EŞLEŞTİRİLDİ
 PWA_APP_ICONS = [
-    # Bu boyutların klasörünüzde olduğundan emin olun!
+    # Bu boyutların 'static/images/icons/' klasöründe olduğundan emin olun!
     {'src': '/static/images/icons/72.png', 'sizes': '72x72'},    # Eğer 72.png varsa
     {'src': '/static/images/icons/96.png', 'sizes': '96x96'},    # Eğer 96.png varsa
     {'src': '/static/images/icons/128.png', 'sizes': '128x128'},   # Bu vardı
@@ -182,3 +190,5 @@ PWA_APP_ICONS_APPLE = [
     # Apple ikonu için de doğru dosya adını kontrol edin (örn: apple-touch-icon.png veya 180.png)
     {'src': '/static/images/icons/180.png', 'sizes': '180x180'} # Örnek, sizdeki farklıysa değiştirin
 ]
+# PWA_APP_SPLASH_SCREEN = [...] # İsteğe bağlı
+# PWA_SERVICE_WORKER_PATH = os.path.join(BASE_DIR, 'static/js', 'serviceworker.js') # Özel SW için

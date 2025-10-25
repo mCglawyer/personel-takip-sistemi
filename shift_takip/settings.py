@@ -27,7 +27,7 @@ DEBUG = True
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
-    'personel-takip-sistemi-yirl.onrender.com', # BU SATIRIN EKLENDİĞİNDEN EMİN OLUN
+    'https://personel-takip-sistemi-yirl.onrender.com/', # BU SATIRIN EKLENDİĞİNDEN EMİN OLUN
     # Eğer özel alan adınız varsa o da burada olmalı
 ]
 
@@ -52,8 +52,9 @@ INSTALLED_APPS = [app for app in INSTALLED_APPS if app is not None]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    # Whitenoise Middleware (Render statik dosyaları için önerilir - DEBUG=False iken)
-    # 'whitenoise.middleware.WhiteNoiseMiddleware', # Şimdilik yorumda kalsın
+    'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', 
+    'django.contrib.sessions.middleware.SessionMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -145,6 +146,7 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 # Whitenoise için (DEBUG=False iken statik dosyaları sunmaya yardımcı olur - opsiyonel)
 # STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

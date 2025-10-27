@@ -1,200 +1,113 @@
-{% extends 'base.html' %} {# Ana şablonu (kahve temalı navbar vb.) miras alır #}
+{% extends 'base.html' %}
 {% load static %}
-{% load pwa %} {# PWA meta etiketleri için (base.html'de zaten var ama tekrar eklenebilir) #}
+{% load pwa %}
 
 {% block title %}Mola QR Kodu Tarayıcı{% endblock %}
 
-{# Bu sayfaya özel stilleri head bloğuna gönder #}
 {% block head_styles %}
-    <style>
-        /* Tarayıcıyı ortalamak için base.html'deki dikey ortalamayı kullanalım */
-        /* (base.html'de .content-wrapper { justify-content: center; } yoksa buraya eklenebilir) */
-        main.container {
-            max-width: 600px; /* Konteyneri daralt */
-        }
-        
-        #qr-reader {
-            width: 100%;
-            border: 1px solid #ccc;
-            background-color: #eee; /* Kamera yüklenene kadar */
-            position: relative;
-            overflow: hidden; /* Kenarlardan taşan video görüntüsünü gizle */
-        }
-        #qr-reader video {
-            width: 100%;
-            height: auto;
-            display: block;
-        }
-        #qr-reader-results {
-            margin-top: 15px; 
-            font-weight: bold; 
-            min-height: 1.5em; /* Mesaj alanı */
-        }
-        /* Hata/Bilgi Mesajları için stiller (Bootstrap alert'leri de kullanılabilir) */
-        .status-message { color: #555; font-style: italic;}
-        .error-message { color: #dc3545; font-weight: bold;}
-        .success-message { color: #198754; font-weight: bold;}
-    </style>
+<style>
+    main.container { max-width: 600px; }
+    #qr-reader { width: 100%; border: 1px solid #ccc; background-color: #eee; position: relative; overflow: hidden; }
+    #qr-reader video { width: 100%; height: auto; display: block; }
+    #qr-reader-results { margin-top: 15px; font-weight: bold; min-height: 1.5em; }
+    .status-message { color: #555; font-style: italic;}
+</style>
 {% endblock %}
 
-
-{# Ana içerik bloğunu doldur (base.html'deki) #}
 {% block content %}
-    {# Bootstrap Kartı içinde #}
-    <div class="card shadow-sm">
-        <div class="card-body p-4 text-center">
-            
-            <h1 class="h3 mb-3">Mola QR Kodu Tarayıcı</h1>
-            <p class="text-muted">Lütfen mola başlatmak veya bitirmek için şubenizdeki QR kodu tarayın.</p>
-
-            {# Tarayıcının render edileceği alan #}
-            <div id="qr-reader" class="rounded">
-                <span class="status-message p-4 d-block">Kamera bekleniyor...</span>
-            </div>
-
-            {# Tarama sonuçlarının veya durum mesajlarının gösterileceği alan #}
-            <div id="qr-reader-results" class="mt-3"></div>
-
-            {# Başlat/Durdur Butonları (Bootstrap stilleriyle) #}
-            <div class="controls mt-3 d-grid gap-2 d-sm-flex justify-content-sm-center">
-                <button id="startButton" class="btn btn-coffee" disabled><i class="bi bi-play-fill"></i> Taramayı Başlat</button>
-                <button id="stopButton" class="btn btn-danger" disabled><i class="bi bi-stop-fill"></i> Durdur</button>
-            </div>
-            
-            {# Ana panele dönüş linki base.html'deki navbar'da zaten var, o yüzden buraya tekrar eklemeye gerek yok #}
-            {# <a href="{% url 'accounts:dashboard' %}" class="btn btn-link mt-3">&laquo; Ana Panele Geri Dön</a> #}
-            
+<div class="card shadow-sm">
+    <div class="card-body p-4 text-center">
+        <h1 class="h3 mb-3">Mola QR Kodu Tarayıcı</h1>
+        <p class="text-muted">Lütfen mola başlatmak veya bitirmek için şubenizdeki QR kodu tarayın.</p>
+        <div id="qr-reader" class="rounded">
+            <span class="status-message p-4 d-block">Kamera bekleniyor...</span>
+        </div>
+        <div id="qr-reader-results" class="mt-3"></div>
+        <div class="controls mt-3 d-grid gap-2 d-sm-flex justify-content-sm-center">
+            <button id="startButton" class="btn btn-coffee" disabled><i class="bi bi-play-fill"></i> Taramayı Başlat</button>
+            <button id="stopButton" class="btn btn-danger" disabled><i class="bi bi-stop-fill"></i> Durdur</button>
         </div>
     </div>
+</div>
 {% endblock %}
 
-
-{# Bu sayfaya özel script'leri base.html'deki scripts bloğuna gönder #}
 {% block scripts %}
-    <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
-    
-    <script>
-        const qrReaderElement = document.getElementById('qr-reader');
-        const resultElement = document.getElementById('qr-reader-results');
-        const startButton = document.getElementById('startButton');
-        const stopButton = document.getElementById('stopButton');
-        const statusMessageSpan = qrReaderElement.querySelector('.status-message');
+<script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+<script>
+    const qrReaderElement = document.getElementById('qr-reader');
+    const resultElement = document.getElementById('qr-reader-results');
+    const startButton = document.getElementById('startButton');
+    const stopButton = document.getElementById('stopButton');
+    const statusMessageSpan = qrReaderElement.querySelector('.status-message');
+    let html5QrCode = null;
 
-        let html5QrCode = null; // Tarayıcı objesini tutacak değişken
+    function onScanSuccess(decodedText, decodedResult) {
+        console.log(`Kod bulundu! = ${decodedText}`, decodedResult);
+        resultElement.textContent = `Kod bulundu, kontrol ediliyor...`;
+        stopScanning();
+        var siteOrigin = window.location.origin; // "https://www.geekpanel.net"
 
-        // Tarama başarılı olduğunda çalışacak fonksiyon (GÜNCELLENDİ)
-        function onScanSuccess(decodedText, decodedResult) {
-            console.log(`Kod bulundu! = ${decodedText}`, decodedResult);
-            resultElement.textContent = `Kod bulundu, kontrol ediliyor...`;
-            resultElement.style.color = '#555';
-            stopScanning(); // Taramayı durdur
-
-            // Sitenin kendi adresini (origin) al (örn: "https://www.geekpanel.net")
-            var siteOrigin = window.location.origin;
-
-            // GÜVENLİK KONTROLÜ VE HATA MESAJI (GÜNCELLENDİ)
-            if (decodedText.startsWith(siteOrigin) && decodedText.includes("/app/mola/")) {
-                // BAŞARILI DURUM (Doğru adresle başlıyor ve mola URL'i içeriyor)
-                resultElement.textContent = `Geçerli kod bulundu! Yönlendiriliyor...`;
-                resultElement.style.color = 'var(--coffee-medium)'; // Başarı için kahve rengi
-                // Yönlendirmeyi yap
-                window.location.href = decodedText;
-            } else {
-                // BAŞARISIZ DURUM - NEDENİNİ GÖSTER
-                resultElement.innerHTML = `
-                    <div class="alert alert-danger" role="alert">
-                        <h4 class="alert-heading" style="font-size: 1.1rem;">GEÇERSİZ QR KOD!</h4>
-                        <p>Okunan kod, bu site için geçerli bir mola kodu değil.</p>
-                        <hr>
-                        <p class="mb-0" style="font-size: 0.9em;">Lütfen şubenizdeki doğru QR kodu okuttuğunuzdan emin olun.</p>
-                        <small style="font-size: 0.8em; word-wrap: break-word;">(Okunan Değer: ${decodedText})</small>
-                    </div>
-                `;
-                startButton.disabled = false; // Tekrar denemesine izin ver
-            }
-        }
-
-        // Tarama sırasında hata olursa çalışacak fonksiyon (opsiyonel)
-        function onScanFailure(error) {
-            // Sürekli log basmaması için sessiz kalabilir
-            // resultElement.textContent = "QR kod aranıyor...";
-            // resultElement.style.color = '#555';
-        }
-
-        // Taramayı başlatan fonksiyon (GÜNCELLENDİ - Sadece arka kamera)
-        function startScanning() {
-            if (!html5QrCode) {
-                 console.error("Tarayıcı objesi başlatılamadı.");
-                 resultElement.innerHTML = `<div class="alert alert-danger">Tarayıcı başlatılamadı.</div>`;
-                 return;
-            }
-            
-            // Tarama ayarları (Saniyede 10 kare, tarama kutusu boyutu)
-            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-            
-            // Kamera ayarları: Açıkça ARKA KAMERAYI ('environment') iste
-            const cameraConfig = { facingMode: "environment" };
-
-            // Seçilen kamera ile taramayı başlat
-            html5QrCode.start(
-                cameraConfig,      // Arka kamerayı iste
-                config,            // Tarama ayarları
-                onScanSuccess,     // Başarı fonksiyonu
-                onScanFailure      // Hata fonksiyonu
-            ).then(() => {
-                console.log("Tarama başlatıldı.");
-                resultElement.textContent = "QR kod aranıyor...";
-                resultElement.style.color = '#555';
-                startButton.disabled = true;
-                stopButton.disabled = false;
-                if(statusMessageSpan) statusMessageSpan.style.display = 'none'; // "Kamera bekleniyor" mesajını gizle
-            }).catch(err => {
-                console.error(`Tarama başlatılamadı: ${err}`);
-                let userMessage = `Kamera başlatılamadı veya izin verilmedi. Lütfen sayfa ayarlarından kamera iznini kontrol edin.`;
-                if (location.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(location.hostname)) {
-                     userMessage += "<br><strong>Güvenli bağlantı (HTTPS) gerekli olabilir.</strong>";
-                }
-                resultElement.innerHTML = `<div class="alert alert-danger">${userMessage}</div>`;
-                startButton.disabled = false;
-                stopButton.disabled = true;
-            });
-        }
-
-        // Taramayı durduran fonksiyon
-        function stopScanning() {
-            if (html5QrCode && html5QrCode.isScanning) {
-                html5QrCode.stop().then(ignore => {
-                    console.log("Tarama durduruldu.");
-                    resultElement.textContent = "Tarama durduruldu.";
-                    resultElement.style.color = '#555';
-                    startButton.disabled = false;
-                    stopButton.disabled = true;
-                     if(statusMessageSpan) statusMessageSpan.style.display = 'block';
-                }).catch(err => { console.error(`Tarama durdurulamadı: ${err}`); });
-            }
-        }
-
-        // Sayfa yüklendiğinde tarayıcıyı başlat ve butonları ayarla
-        document.addEventListener('DOMContentLoaded', (event) => {
-            // html5QrCode objesini "qr-reader" ID'li elemente bağla
-            html5QrCode = new Html5Qrcode("qr-reader");
+        // GÜVENLİK KONTROLÜ VE HATA MESAJI
+        if (decodedText.startsWith(siteOrigin) && decodedText.includes("/app/mola/")) {
+            resultElement.textContent = `Geçerli kod bulundu! Yönlendiriliyor...`;
+            resultElement.style.color = 'var(--coffee-medium)';
+            window.location.href = decodedText;
+        } else {
+            // GEÇERSİZ KOD İÇİN HATA GÖSTER
+            resultElement.innerHTML = `
+                <div class="alert alert-danger" role="alert">
+                    <h4 class="alert-heading" style="font-size: 1.1rem;">GEÇERSİZ QR KOD!</h4>
+                    <p>Okunan kod, bu site (${siteOrigin}) için geçerli bir mola kodu değil.</p>
+                    <hr>
+                    <p class="mb-0" style="font-size: 0.9em;">Lütfen şubenizdeki doğru QR kodu okuttuğunuzdan emin olun.</p>
+                    <small style="font-size: 0.8em; word-wrap: break-word;">(Okunan Değer: ${decodedText})</small>
+                </div>
+            `;
             startButton.disabled = false;
-            startButton.onclick = startScanning;
-            stopButton.onclick = stopScanning;
+        }
+    }
+    function onScanFailure(error) { }
 
-            // HTTPS Koruması
+    function startScanning() {
+        if (!html5QrCode) { resultElement.innerHTML = `<div class="alert alert-danger">Tarayıcı başlatılamadı.</div>`; return; }
+        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+        const cameraConfig = { facingMode: "environment" }; // Arka kamerayı iste
+
+        html5QrCode.start(cameraConfig, config, onScanSuccess, onScanFailure)
+        .then(() => {
+            console.log("Tarama başlatıldı.");
+            resultElement.textContent = "QR kod aranıyor..."; resultElement.style.color = '#555';
+            startButton.disabled = true; stopButton.disabled = false;
+            if(statusMessageSpan) statusMessageSpan.style.display = 'none';
+        }).catch(err => {
+            let userMessage = `Kamera başlatılamadı veya izin verilmedi. Lütfen sayfa ayarlarından kamera iznini kontrol edin.`;
             if (location.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(location.hostname)) {
-                 resultElement.innerHTML = `<div class="alert alert-warning">Güvenli bağlantı (HTTPS) olmadığı için kamera çalışmayabilir.</div>`;
-                 startButton.disabled = true;
-            } else {
-                 // Otomatik başlat (opsiyonel)
-                 // startScanning(); 
+                 userMessage += "<br><strong>Güvenli bağlantı (HTTPS) gerekli olabilir.</strong>";
             }
+            resultElement.innerHTML = `<div class="alert alert-danger">${userMessage}</div>`;
+            startButton.disabled = false; stopButton.disabled = true;
         });
-
-        // Sayfadan ayrılırken taramayı durdur
-        window.addEventListener('beforeunload', function (e) {
-            stopScanning();
-        });
-    </script>
+    }
+    function stopScanning() {
+        if (html5QrCode && html5QrCode.isScanning) {
+            html5QrCode.stop().then(ignore => {
+                console.log("Tarama durduruldu.");
+                resultElement.textContent = "Tarama durduruldu."; resultElement.style.color = '#555';
+                startButton.disabled = false; stopButton.disabled = true;
+                 if(statusMessageSpan) statusMessageSpan.style.display = 'block';
+            }).catch(err => { console.error(`Tarama durdurulamadı: ${err}`); });
+        }
+    }
+    document.addEventListener('DOMContentLoaded', (event) => {
+        html5QrCode = new Html5Qrcode("qr-reader");
+        startButton.disabled = false;
+        startButton.onclick = startScanning;
+        stopButton.onclick = stopScanning;
+        if (location.protocol !== 'https:' && !['localhost', '127.0.0.1'].includes(location.hostname)) {
+             resultElement.innerHTML = `<div class="alert alert-warning">Güvenli bağlantı (HTTPS) olmadığı için kamera çalışmayabilir.</div>`;
+             startButton.disabled = true;
+        }
+    });
+    window.addEventListener('beforeunload', function (e) { stopScanning(); });
+</script>
 {% endblock %}

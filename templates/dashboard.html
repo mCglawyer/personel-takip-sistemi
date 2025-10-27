@@ -1,8 +1,7 @@
 {% extends 'base.html' %} {# Ana şablonu (kahve temalı) miras alır #}
 {% load static %}
-{% load custom_filters %} {# has_group filtresini kullanabilmek için #}
-{% load pwa %} {# PWA meta etiketleri için #}
-
+{# {% load custom_filters %} #}  <-- BU SATIRI YORUM YAPIN VEYA SİLİN
+{% load pwa %}
 {# Sayfa başlığını base.html'e gönder #}
 {% block title %}Ana Panel - {{ user.username }}{% endblock %}
 
@@ -96,21 +95,18 @@
             </div>
             <div class="card-body p-4">
                 
-                <div class="admin-controls mb-4 p-3 bg-light rounded border">
-                    <h3 class="h5 mb-3 border-bottom pb-2"><i class="bi bi-tools"></i> Yönetim Araçları</h3>
-                    <div class="d-flex flex-wrap"> {# Butonları yan yana sırala ve sar #}
-                        {# Şef ve üstü için butonlar (Yeni kahve stili: btn-coffee) #}
-                        <a href="{% url 'accounts:weekly_schedule_select' %}" class="btn btn-coffee"><i class="bi bi-calendar-week"></i> Haftalık Vardiya Planla</a>
-                        <a href="{% url 'accounts:personnel_list' %}" class="btn btn-coffee"><i class="bi bi-people-fill"></i> Personel Yönetimi</a>
-                        <a href="{% url 'accounts:pending_leave_requests' %}" class="btn btn-coffee"><i class="bi bi-clock-history"></i> Bekleyen İzin Talepleri</a>
-                        
-                        {# Sadece Bölge Yöneticisi ve Superuser için Rapor Butonları (Yeni açık kahve stili: btn-coffee-light) #}
-                        {% if user|has_group:"Bölge Yöneticisi" or user.is_superuser %}
-                            <a href="{% url 'accounts:exceeded_breaks_report' %}" class="btn btn-coffee-light"><i class="bi bi-exclamation-triangle"></i> Mola Süresini Aşanlar</a>
-                            <a href="{% url 'accounts:break_report_select' %}" class="btn btn-coffee-light"><i class="bi bi-graph-up"></i> Haftalık Mola Raporu</a>
-                            <a href="{% url 'accounts:attendance_report_select' %}" class="btn btn-coffee-light"><i class="bi bi-file-earmark-spreadsheet"></i> Aylık Puantaj Raporu</a>
-                        {% endif %}
-                    </div>
+          <div class="d-flex flex-wrap">
+    <a href="{% url 'accounts:weekly_schedule_select' %}" class="btn btn-coffee"><i class="bi bi-calendar-week"></i> Haftalık Vardiya Planla</a>
+    <a href="{% url 'accounts:personnel_list' %}" class="btn btn-coffee"><i class="bi bi-people-fill"></i> Personel Yönetimi</a>
+    <a href="{% url 'accounts:pending_leave_requests' %}" class="btn btn-coffee"><i class="bi bi-clock-history"></i> Bekleyen İzin Talepleri</a>
+
+    {# --- IF BLOĞU GEÇİCİ OLARAK KALDIRILDI --- #}
+    {# Bu butonları artık TÜM yöneticiler (Şefler dahil) görecek #}
+    <a href="{% url 'accounts:exceeded_breaks_report' %}" class="btn btn-coffee-light"><i class="bi bi-exclamation-triangle"></i> Mola Süresini Aşanlar</a>
+    <a href="{% url 'accounts:break_report_select' %}" class="btn btn-coffee-light"><i class="bi bi-graph-up"></i> Haftalık Mola Raporu</a>
+    <a href="{% url 'accounts:attendance_report_select' %}" class="btn btn-coffee-light"><i class="bi bi-file-earmark-spreadsheet"></i> Aylık Puantaj Raporu</a>
+    {# --- IF BLOĞU SONU --- #}
+</div>
                 </div>
 
                 <h3 class="h5 mt-4">Kişisel Mola Durumu</h3>

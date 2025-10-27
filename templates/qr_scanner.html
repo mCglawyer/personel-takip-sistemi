@@ -63,103 +63,107 @@
 <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
 
 <script>
-    // ... (JavaScript kodunun tamamı öncekiyle aynı) ...
-    const qrReaderElement = document.getElementById('qr-reader');
-    const resultElement = document.getElementById('qr-reader-results');
-    const startButton = document.getElementById('startButton');
-    const stopButton = document.getElementById('stopButton');
-    const statusMessageSpan = qrReaderElement.querySelector('.status-message');
+        const qrReaderElement = document.getElementById('qr-reader');
+        const resultElement = document.getElementById('qr-reader-results');
+        const startButton = document.getElementById('startButton');
+        const stopButton = document.getElementById('stopButton');
+        const statusMessageSpan = qrReaderElement.querySelector('.status-message');
 
-    let html5QrCode = null; 
+        let html5QrCode = null; // Tarayıcı objesini tutacak değişken
 
-    function onScanSuccess(decodedText, decodedResult) {
-        console.log(`Kod bulundu! = ${decodedText}`, decodedResult);
-        resultElement.textContent = `Kod bulundu! Yönlendiriliyor...`;
-        resultElement.style.color = '#28a745';
-        stopScanning();
-        // Güvenlik: Sadece bizim sitemizdeki URL'lere yönlendir
-        if (decodedText.startsWith(window.location.origin)) {
-            window.location.href = decodedText;
-        } else {
-             console.warn("Harici bir URL tarandı, yönlendirme engellendi:", decodedText);
-             resultElement.textContent = "Geçersiz QR kod tarandı.";
-             resultElement.style.color = '#dc3545';
-             startButton.disabled = false; // Tekrar denemesine izin ver
-        }
-    }
-    function onScanFailure(error) { /* Hata logunu sessize al */ }
+        // Tarama başarılı olduğunda çalışacak fonksiyon
+        function onScanSuccess(decodedText, decodedResult) {
+            console.log(`Kod bulundu! = ${decodedText}`, decodedResult);
+            resultElement.textContent = `Kod bulundu! Yönlendiriliyor...`;
+            resultElement.style.color = '#28a745';
+            stopScanning();
 
-    function startScanning() {
-        if (!html5QrCode) {
-             console.error("Tarayıcı objesi başlatılamadı.");
-             resultElement.textContent = "Tarayıcı başlatılamadı.";
-             resultElement.style.color = '#dc3545';
-             return;
-        }
-        const config = { fps: 10, qrbox: { width: 250, height: 250 } };
-
-        Html5Qrcode.getCameras().then(cameras => {
-            let cameraIdToUse = null;
-            if (cameras && cameras.length > 0) {
-                 cameraIdToUse = cameras[cameras.length - 1].id; // Genellikle arka kamera
+            // GÜVENLİK KONTROLÜ: Sadece bu sitenin URL'lerine yönlendir
+            // window.location.origin -> https://www.geekpanel.net
+            if (decodedText.startsWith(window.location.origin)) {
+                window.location.href = decodedText;
             } else {
-                console.error("Kamera bulunamadı.");
-                resultElement.textContent = "Cihazınızda kamera bulunamadı.";
-                resultElement.style.color = '#dc3545';
-                return;
+                 console.warn("Harici veya geçersiz (örn: http://) bir URL tarandı, yönlendirme engellendi:", decodedText);
+                 resultElement.textContent = "Geçersiz QR kod tarandı. Lütfen doğru kodu okutun.";
+                 resultElement.style.color = '#dc3545';
+                 startButton.disabled = false; // Tekrar denemesine izin ver
             }
-            html5QrCode.start(cameraIdToUse, config, onScanSuccess, onScanFailure)
-            .then(() => {
+        }
+
+        // Tarama sırasında hata olursa çalışacak fonksiyon (opsiyonel)
+        function onScanFailure(error) {
+            // Sürekli log basmaması için sessiz kalabilir
+        }
+
+        // Taramayı başlatan fonksiyon
+        function startScanning() {
+            if (!html5QrCode) {
+                 console.error("Tarayıcı objesi başlatılamadı.");
+                 resultElement.textContent = "Tarayıcı başlatılamadı.";
+                 resultElement.style.color = '#dc3545';
+                 return;
+            }
+            
+            // Tarama ayarları (Saniyede 10 kare, tarama kutusu boyutu)
+            const config = { fps: 10, qrbox: { width: 250, height: 250 } };
+            
+            // Kamera ayarları: Açıkça ARKA KAMERAYI ('environment') iste
+            const cameraConfig = { facingMode: "environment" };
+
+            // Seçilen kamera ile taramayı başlat
+            html5QrCode.start(
+                cameraConfig,      // Arka kamerayı iste
+                config,            // Tarama ayarları
+                onScanSuccess,     // Başarı fonksiyonu
+                onScanFailure      // Hata fonksiyonu
+            ).then(() => {
                 console.log("Tarama başlatıldı.");
                 resultElement.textContent = "QR kod aranıyor...";
                 resultElement.style.color = '#555';
                 startButton.disabled = true;
                 stopButton.disabled = false;
-                if(statusMessageSpan) statusMessageSpan.style.display = 'none';
+                if(statusMessageSpan) statusMessageSpan.style.display = 'none'; // "Kamera bekleniyor" mesajını gizle
             }).catch(err => {
                 console.error(`Tarama başlatılamadı: ${err}`);
-                resultElement.textContent = `Kamera başlatılamadı veya izin verilmedi.`;
+                resultElement.textContent = `Kamera başlatılamadı veya izin verilmedi. Hata: ${err}`;
                 resultElement.style.color = '#dc3545';
-                startButton.disabled = false;
+                startButton.disabled = false; // Tekrar denemek için butonu aktif et
                 stopButton.disabled = true;
             });
-        }).catch(err => {
-            console.error("Kameralar alınamadı:", err);
-            resultElement.textContent = "Kamera erişimi reddedildi veya bir hata oluştu.";
-            resultElement.style.color = '#dc3545';
+        }
+
+        // Taramayı durduran fonksiyon
+        function stopScanning() {
+            if (html5QrCode && html5QrCode.isScanning) {
+                html5QrCode.stop().then(ignore => {
+                    console.log("Tarama durduruldu.");
+                    resultElement.textContent = "Tarama durduruldu.";
+                    resultElement.style.color = '#555';
+                    startButton.disabled = false;
+                    stopButton.disabled = true;
+                     if(statusMessageSpan) statusMessageSpan.style.display = 'block';
+                }).catch(err => { console.error(`Tarama durdurulamadı: ${err}`); });
+            }
+        }
+
+        // Sayfa yüklendiğinde tarayıcıyı başlat ve butonları ayarla
+        document.addEventListener('DOMContentLoaded', (event) => {
+            html5QrCode = new Html5Qrcode("qr-reader");
             startButton.disabled = false;
-            stopButton.disabled = true;
+            startButton.onclick = startScanning;
+            stopButton.onclick = stopScanning;
+
+            // HTTPS Koruması
+            if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
+                 resultElement.textContent = "Güvenli bağlantı (HTTPS) gerekli olduğu için kamera çalışmayabilir.";
+                 resultElement.style.color = '#dc3545';
+                 startButton.disabled = true;
+            }
         });
-    }
 
-    function stopScanning() {
-        if (html5QrCode && html5QrCode.isScanning) {
-            html5QrCode.stop().then(ignore => {
-                console.log("Tarama durduruldu.");
-                resultElement.textContent = "Tarama durduruldu.";
-                resultElement.style.color = '#555';
-                startButton.disabled = false;
-                stopButton.disabled = true;
-                 if(statusMessageSpan) statusMessageSpan.style.display = 'block';
-            }).catch(err => { console.error(`Tarama durdurulamadı: ${err}`); });
-        }
-    }
-
-    document.addEventListener('DOMContentLoaded', (event) => {
-        html5QrCode = new Html5Qrcode("qr-reader");
-        startButton.disabled = false;
-        startButton.onclick = startScanning;
-        stopButton.onclick = stopScanning;
-        // HTTPS Koruması: Eğer sayfa HTTPS değilse (localhost hariç) uyar
-        if (location.protocol !== 'https:' && location.hostname !== 'localhost' && location.hostname !== '127.0.0.1') {
-             resultElement.textContent = "Güvenli bağlantı (HTTPS) gerekli olduğu için kamera çalışmayabilir.";
-             resultElement.style.color = '#dc3545';
-             startButton.disabled = true;
-        }
-    });
-
-    window.addEventListener('beforeunload', function (e) {
-        stopScanning();
-    });
-</script>
+        // Sayfadan ayrılırken taramayı durdur
+        window.addEventListener('beforeunload', function (e) {
+            stopScanning();
+        });
+    </script>
 {% endblock %}

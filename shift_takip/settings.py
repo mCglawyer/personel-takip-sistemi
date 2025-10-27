@@ -1,4 +1,4 @@
-# shift_takip/settings.py (En Güncel ve Tam Hali - Render Dağıtımı İçin Hazır - 25 Ekim 2025)
+# shift_takip/settings.py (En Güncel Hali - Render Dağıtımı İçin Ayarlı - 25 Ekim 2025)
 
 """
 Django settings for shift_takip project.
@@ -6,6 +6,7 @@ Django settings for shift_takip project.
 
 import os
 from pathlib import Path
+import dj_database_url # Render'ın DATABASE_URL'ini okumak için
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -15,27 +16,31 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-# CANLI ORTAMDA BUNU MUTLAKA ORTAM DEĞİŞKENİNDEN ALIN!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-=varsayilan_ama_degistir=)uf*s%7&^c') # Örnek
+# Render'ın "Environment" bölümünden 'DJANGO_SECRET_KEY' olarak ayarlayın.
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fallback-key-yerelde-calisirken-kullanilir')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Render genellikle 'RENDER' ortam değişkenini ayarlar.
-# Canlıda otomatik False, yerelde True yapar.
+# Render, 'RENDER' değişkenini otomatik ayarlar. Canlıda False, yerelde True olur.
 DEBUG = os.environ.get('RENDER') is None
 
 # İzin verilen alan adları
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
-    'personel-takip-sistemi-yirl.onrender.com', # Render'ın varsayılan adresi
-    'www.geekpanel.net',                       # Sizin özel alan adınız
-    'geekpanel.net',                           # Kök alan adınız
 ]
 
-# Render'ın kendi dahili host adını da eklemek gerekebilir (Opsiyonel, hata alırsanız eklersiniz)
+# Render'ın size verdiği host adlarını otomatik ekle
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
 if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+
+# Kendi özel alan adlarınızı ekleyin
+# (settings.py'ı her değiştirdiğinizde GitHub'a push etmeniz gerekir)
+ALLOWED_HOSTS.extend([
+    'personel-takip-sistemi-yirl.onrender.com', # Render'ın varsayılan adresi
+    'www.geekpanel.net',
+    'geekpanel.net',
+])
 
 
 # Application definition
@@ -48,13 +53,14 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     # Üçüncü Parti Uygulamalar
-    'whitenoise.runserver_nostatic', # DEBUG=True iken whitenoise'un çalışması için (runserver ile)
+    'whitenoise.runserver_nostatic', # DEBUG=True iken whitenoise'un çalışması için
     'pwa',                           # django-pwa paketi
     # Bizim Uygulamalarımız
     'accounts',
     # Özel template filtreleri için (templatetags klasörü varsa)
     'accounts.templatetags.custom_filters' if os.path.isdir(BASE_DIR / 'accounts/templatetags') else None,
 ]
+# None olanları listeden temizle
 INSTALLED_APPS = [app for app in INSTALLED_APPS if app is not None]
 
 MIDDLEWARE = [
@@ -69,7 +75,7 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-ROOT_URLCONF = 'shift_takip.urls'
+ROOT_URLCONF = 'shift_takip.urls' # Ana URL yapılandırma dosyamız
 
 TEMPLATES = [
     {
@@ -96,30 +102,20 @@ WSGI_APPLICATION = 'shift_takip.wsgi.application'
 
 
 # Database
-# Render için ortam değişkeninden okumak en iyisidir.
-# `dj-database-url` paketini kurup kullanmak tavsiye edilir.
-# pip install dj-database-url
-# import dj_database_url
-
+# Render'daki DATABASE_URL ortam değişkeninden bağlantı bilgilerini okur.
+# Bulamazsa (yerel makine), varsayılan olarak SQLite'ı kullanır.
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-        # --- RENDER POSTGRESQL ÖRNEĞİ (Yorumda - Ortam değişkeni daha iyi) ---
-        # Veritabanı URL'sini Render Environment bölümünden DATABASE_URL olarak ayarlayın.
-        # 'default': dj_database_url.config(
-        #     default=f'sqlite:///{BASE_DIR / "db.sqlite3"}', # Yerel için fallback
-        #     conn_max_age=600 # Bağlantı havuzu ömrü (saniye)
-        # )
-        # Manuel ayar (Ortam değişkeni yoksa):
-        # 'ENGINE': 'django.db.backends.postgresql',
-        # 'NAME': 'render_db_adı',
-        # 'USER': 'render_kullanıcı_adı',
-        # 'PASSWORD': 'render_db_sifresi',
-        # 'HOST': 'render_db_host_adresi.oregon-postgres.render.com',
-        # 'PORT': '5432',
-    }
+    'default': dj_database_url.config(
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
+        conn_max_age=600 # Bağlantı havuzu ömrü (saniye)
+    )
 }
+
+# Render'daki PostgreSQL'in SSL bağlantısı gerektirmesi durumunda:
+if 'DATABASE_URL' in os.environ: # Sadece canlı ortamda (Render'da)
+    DATABASES['default']['OPTIONS'] = {
+        'sslmode': 'require' # PostgreSQL bağlantısını SSL kullanmaya zorla
+    }
 
 
 # Password validation
@@ -145,10 +141,11 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 # CANLI ORTAM İÇİN ZORUNLU: 'collectstatic' komutunun dosyaları toplayacağı yer.
-# Render'daki 'Static Files' -> 'Publish directory' ayarıyla eşleşmeli.
+# Render'daki 'Build Command' bu klasöre toplar.
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
-# Whitenoise için Depolama Backend'i (Önerilen)
+# Whitenoise için Depolama Backend'i (Gerekli)
+# Bu, 'collectstatic'in sıkıştırılmış dosyalar oluşturmasını sağlar.
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
@@ -160,11 +157,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 # --------------------------------------------------------------------------
 # Canlı ortamda Render Ortam Değişkenleri'nden alınmalı
 EMAIL_BACKEND = os.environ.get('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend') # Varsayılan: konsol
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 25)) # Port sayı olmalı
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False').lower() == 'true'
-EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '') # Uygulama şifresi
+EMAIL_HOST = os.environ.get('EMAIL_HOST')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587)) # Port sayı olmalı
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() == 'true'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD') # Uygulama şifresi
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'webmaster@localhost')
 
 # --------------------------------------------------------------------------
@@ -179,18 +176,16 @@ PWA_APP_DISPLAY = 'standalone'
 PWA_APP_SCOPE = '/'
 PWA_APP_START_URL = '/'
 
-# İKON YOLLARI KONTROL EDİLDİ VE GÜNCELLENDİ (Sizin klasör yapınıza göre)
-# static/images/icons/ KLASÖRÜNDEKİ GERÇEK DOSYA ADLARIYLA EŞLEŞTİRİLDİ
+# İKON YOLLARI (Sizin static/images/icons/ klasörünüzdeki dosya adlarına göre)
 PWA_APP_ICONS = [
-    # Bu boyutların 'static/images/icons/' klasöründe olduğundan emin olun!
-    {'src': '/static/images/icons/72.png', 'sizes': '72x72'},    # Eğer 72.png varsa
-    {'src': '/static/images/icons/96.png', 'sizes': '96x96'},    # Eğer 96.png varsa
-    {'src': '/static/images/icons/128.png', 'sizes': '128x128'},   # Bu vardı
-    {'src': '/static/images/icons/144.png', 'sizes': '144x144'},   # Bu vardı
-    {'src': '/static/images/icons/152.png', 'sizes': '152x152'},   # Bu vardı
-    {'src': '/static/images/icons/192.png', 'sizes': '192x192'},   # 192.png olmalı!
-    {'src': '/static/images/icons/384.png', 'sizes': '384x384'},   # 384.png olmalı!
-    {'src': '/static/images/icons/512.png', 'sizes': '512x512'}    # 512.png olmalı!
+    {'src': '/static/images/icons/72.png', 'sizes': '72x72'},    # Bu dosyaların varlığını kontrol edin!
+    {'src': '/static/images/icons/96.png', 'sizes': '96x96'},
+    {'src': '/static/images/icons/128.png', 'sizes': '128x128'},
+    {'src': '/static/images/icons/144.png', 'sizes': '144x144'},
+    {'src': '/static/images/icons/152.png', 'sizes': '152x152'},
+    {'src': '/static/images/icons/192.png', 'sizes': '192x192'}, # PWA için önemli
+    {'src': '/static/images/icons/384.png', 'sizes': '384x384'},
+    {'src': '/static/images/icons/512.png', 'sizes': '512x512'}  # PWA için önemli
 ]
 PWA_APP_ICONS_APPLE = [
     # Apple ikonu için de doğru dosya adını kontrol edin

@@ -37,6 +37,8 @@
         .alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px; }
         .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
         .alert-error { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
+        .alert-info { color: #0c5460; background-color: #d1ecf1; border-color: #bee5eb; } /* Bilgi mesajları için */
+
     </style>
 </head>
 <body>
@@ -54,6 +56,7 @@
         {# Değiştirilemeyen Bilgiler #}
         <div class="profile-info" style="margin-bottom: 30px;">
             <p><strong>Kullanıcı Adı:</strong> {{ user.username }}</p>
+            {# Profile ilişkisi üzerinden şube bilgisine erişim #}
             <p><strong>Atandığı Şube:</strong> {{ profile.branch.name|default:"Atanmamış" }}</p>
         </div>
 
@@ -61,8 +64,9 @@
         <h2>Bilgileri Güncelle</h2>
         <form method="POST">
             {% csrf_token %}
+            {# user_form context değişkenini kullanarak formu render et #}
             {{ user_form.as_p }} {# Ad, Soyad, E-posta formu #}
-            {# Butona isim vererek formu ayırt ediyoruz #}
+            {# Butona isim vererek formu ayırt ediyoruz (views.py içinde) #}
             <button type="submit" name="update_profile" class="submit-button update-profile">Bilgilerimi Güncelle</button>
         </form>
 
@@ -72,12 +76,13 @@
         <h2>Şifre Değiştir</h2>
         <form method="POST">
             {% csrf_token %}
+            {# password_form context değişkenini kullanarak formu render et #}
             {{ password_form.as_p }} {# Eski şifre, Yeni şifre, Yeni şifre tekrar #}
-            {# Butona isim vererek formu ayırt ediyoruz #}
+            {# Butona isim vererek formu ayırt ediyoruz (views.py içinde) #}
             <button type="submit" name="change_password" class="submit-button">Şifremi Güncelle</button>
         </form>
 
-        <a href="{% url 'accounts:dashboard' %}" class="back-link">&laquo; Ana Panele Geri Dön</a>
+        <a href="{% url 'accounts:dashboard' %}" class="back-link">&laquo; Ana Panele Geri Dön</a> {# Namespace kullanıldı #}
     </div>
 </body>
 </html>

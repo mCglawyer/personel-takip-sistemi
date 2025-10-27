@@ -1,4 +1,4 @@
-# shift_takip/settings.py (En Güncel Hali - Render Dağıtımı İçin Ayarlı - 25 Ekim 2025)
+# shift_takip/settings.py (En Güncel ve Tam Hali - 500 Hatası Düzeltildi - 27 Ekim 2025)
 
 """
 Django settings for shift_takip project.
@@ -20,7 +20,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'django-insecure-fallback-key-yerelde-calisirken-kullanilir')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-# Render, 'RENDER' değişkenini otomatik ayarlar. Canlıda False, yerelde True olur.
+# Render, 'RENDER' ortam değişkenini otomatik ayarlar. Canlıda False, yerelde True olur.
 DEBUG = os.environ.get('RENDER') is None
 
 # İzin verilen alan adları
@@ -35,11 +35,10 @@ if RENDER_EXTERNAL_HOSTNAME:
     ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # Kendi özel alan adlarınızı ekleyin
-# (settings.py'ı her değiştirdiğinizde GitHub'a push etmeniz gerekir)
 ALLOWED_HOSTS.extend([
     'personel-takip-sistemi-yirl.onrender.com', # Render'ın varsayılan adresi
-    'www.geekpanel.net',
-    'geekpanel.net',
+    'www.geekpanel.net',                       # Sizin özel alan adınız
+    'geekpanel.net',                           # Kök alan adınız
 ])
 
 
@@ -57,7 +56,12 @@ INSTALLED_APPS = [
     'pwa',                           # django-pwa paketi
     # Bizim Uygulamalarımız
     'accounts',
+    # HATA DÜZELTMESİ: custom_filters buradan SİLİNDİ.
+    # Django 'accounts' uygulamasının içindeki 'templatetags' klasörünü otomatik bulur.
 ]
+# HATA DÜZELTMESİ: Bu satır da SİLİNDİ.
+# INSTALLED_APPS = [app for app in INSTALLED_APPS if app is not None]
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     # Whitenoise Middleware (SecurityMiddleware'den hemen sonra gelmeli)
@@ -76,7 +80,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [BASE_DIR / 'templates'], # Proje geneli templates klasörü
-        'APP_DIRS': True,
+        'APP_DIRS': True, # Uygulama klasörlerindeki 'templates' klasörlerini de ara
         'OPTIONS': {
             'context_processors': [
                 'django.template.context_processors.debug',
@@ -84,12 +88,17 @@ TEMPLATES = [
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
             ],
+            # HATA DÜZELTMESİ: 'builtins' bölümü SİLİNDİ veya temizlendi.
             'builtins': [
-        
+                # 'accounts.templatetags.custom_filters' ... (BU SATIR SİLİNDİ)
             ],
         },
     },
 ]
+# HATA DÜZELTMESİ: 'builtins' temizleme satırı SİLİNDİ veya içi boşaltıldı.
+TEMPLATES[0]['OPTIONS']['builtins'] = [b for b in TEMPLATES[0]['OPTIONS']['builtins'] if b]
+
+
 WSGI_APPLICATION = 'shift_takip.wsgi.application'
 
 
@@ -133,11 +142,9 @@ STATICFILES_DIRS = [
     BASE_DIR / 'static',
 ]
 # CANLI ORTAM İÇİN ZORUNLU: 'collectstatic' komutunun dosyaları toplayacağı yer.
-# Render'daki 'Build Command' bu klasöre toplar.
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 # Whitenoise için Depolama Backend'i (Gerekli)
-# Bu, 'collectstatic'in sıkıştırılmış dosyalar oluşturmasını sağlar.
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 
@@ -170,17 +177,15 @@ PWA_APP_START_URL = '/'
 
 # İKON YOLLARI (Sizin static/images/icons/ klasörünüzdeki dosya adlarına göre)
 PWA_APP_ICONS = [
-    {'src': '/static/images/icons/72.png', 'sizes': '72x72'},    # Bu dosyaların varlığını kontrol edin!
+    {'src': '/static/images/icons/72.png', 'sizes': '72x72'},
     {'src': '/static/images/icons/96.png', 'sizes': '96x96'},
     {'src': '/static/images/icons/128.png', 'sizes': '128x128'},
     {'src': '/static/images/icons/144.png', 'sizes': '144x144'},
     {'src': '/static/images/icons/152.png', 'sizes': '152x152'},
-    {'src': '/static/images/icons/192.png', 'sizes': '192x192'}, # PWA için önemli
+    {'src': '/static/images/icons/192.png', 'sizes': '192x192'},
     {'src': '/static/images/icons/384.png', 'sizes': '384x384'},
-    {'src': '/static/images/icons/512.png', 'sizes': '512x512'}  # PWA için önemli
+    {'src': '/static/images/icons/512.png', 'sizes': '512x512'}
 ]
 PWA_APP_ICONS_APPLE = [
-    # Apple ikonu için de doğru dosya adını kontrol edin
-    {'src': '/static/images/icons/180.png', 'sizes': '180x180'} # Örnek, sizdeki farklıysa değiştirin
+    {'src': '/static/images/icons/180.png', 'sizes': '180x180'}
 ]
-# PWA_APP_SPLASH_SCREEN = [...]

@@ -1,88 +1,101 @@
+{% extends 'base.html' %}
 {% load static %}
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profilim - {{ user.username }}</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; background-color: #f9f9f9; }
-        .container { max-width: 800px; margin: auto; background: #fff; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); }
-        h1, h2 { border-bottom: 1px solid #eee; padding-bottom: 10px; margin-bottom: 20px;}
-        .profile-info p { margin-bottom: 10px; font-size: 1.1rem;}
-        .profile-info strong { display: inline-block; min-width: 150px; color: #555;}
 
-        /* Form Stilleri */
-        form { margin-bottom: 30px; } /* Formlar arasına boşluk */
-        form p { margin-bottom: 15px; }
-        form label { display: block; margin-bottom: 5px; font-weight: 500; }
-        /* Inputlar için genel stil */
-        form input[type="text"],
-        form input[type="email"],
-        form input[type="password"],
-        form select,
-        .form-control { /* forms.py'da eklediğimiz class */
-            width: 100%; max-width: 400px; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 1rem;
-        }
-        .helptext { font-size: 0.85em; color: #666; margin-top: 3px;}
-        ul.errorlist { color: #dc3545; list-style: none; padding: 0; margin: 5px 0 10px 0; font-size: 0.9em;}
-        .submit-button { padding: 10px 20px; background-color: #007bff; color: white; border: none; border-radius: 5px; font-size: 1rem; cursor: pointer; transition: background-color 0.2s ease; margin-top: 10px;}
-        .submit-button:hover { background-color: #0056b3; }
-        .submit-button.update-profile { background-color: #28a745; } /* Yeşil buton */
-        .submit-button.update-profile:hover { background-color: #218838; }
+{% block title %}Profilim - {{ user.username }}{% endblock %}
 
-        .back-link { display: block; margin-top: 30px; color: #555; text-decoration: none;}
+{% block head_styles %}
+<style>
+    /* Form alanlarını biraz daha dar tutmak için */
+    .form-control {
+        max-width: 450px;
+    }
+    .profile-info p {
+        font-size: 1.1rem;
+    }
+    .profile-info strong {
+        display: inline-block;
+        min-width: 150px;
+        color: #555;
+    }
+</style>
+{% endblock %}
 
-         /* Başarı/Uyarı Mesajı Stili */
-        .alert { padding: 15px; margin-bottom: 20px; border: 1px solid transparent; border-radius: 4px; }
-        .alert-success { color: #155724; background-color: #d4edda; border-color: #c3e6cb; }
-        .alert-error { color: #721c24; background-color: #f8d7da; border-color: #f5c6cb; }
-        .alert-info { color: #0c5460; background-color: #d1ecf1; border-color: #bee5eb; } /* Bilgi mesajları için */
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
 
-    </style>
-</head>
-<body>
-    <div class="container">
-        <h1>Profil Bilgilerim</h1>
+        <h1 class="mb-4">Profil Bilgilerim</h1>
 
-        {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags|default:'info' }}">
-                    {{ message }}
-                </div>
-            {% endfor %}
-        {% endif %}
-
-        {# Değiştirilemeyen Bilgiler #}
-        <div class="profile-info" style="margin-bottom: 30px;">
-            <p><strong>Kullanıcı Adı:</strong> {{ user.username }}</p>
-            {# Profile ilişkisi üzerinden şube bilgisine erişim #}
-            <p><strong>Atandığı Şube:</strong> {{ profile.branch.name|default:"Atanmamış" }}</p>
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h2 class="h5 mb-0">Sabit Bilgiler</h2>
+            </div>
+            <div class="card-body profile-info">
+                <p><strong>Kullanıcı Adı:</strong> {{ user.username }}</p>
+                <p><strong>Atandığı Şube:</strong> {{ profile.branch.name|default:"Atanmamış" }}</p>
+            </div>
         </div>
 
-        {# Profil Bilgilerini Güncelleme Formu #}
-        <h2>Bilgileri Güncelle</h2>
-        <form method="POST">
-            {% csrf_token %}
-            {# user_form context değişkenini kullanarak formu render et #}
-            {{ user_form.as_p }} {# Ad, Soyad, E-posta formu #}
-            {# Butona isim vererek formu ayırt ediyoruz (views.py içinde) #}
-            <button type="submit" name="update_profile" class="submit-button update-profile">Bilgilerimi Güncelle</button>
-        </form>
+        <div class="card shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <h2 class="h5 mb-0">Kişisel Bilgileri Güncelle</h2>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    {# user_form (Ad, Soyad, E-posta) #}
+                    <div class="mb-3">
+                        <label for="{{ user_form.first_name.id_for_label }}" class="form-label">{{ user_form.first_name.label }}</label>
+                        {{ user_form.first_name }}
+                        {% if user_form.first_name.errors %}<div class="invalid-feedback d-block">{{ user_form.first_name.errors.as_text }}</div>{% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ user_form.last_name.id_for_label }}" class="form-label">{{ user_form.last_name.label }}</label>
+                        {{ user_form.last_name }}
+                        {% if user_form.last_name.errors %}<div class="invalid-feedback d-block">{{ user_form.last_name.errors.as_text }}</div>{% endif %}
+                    </div>
+                    <div class="mb-3">
+                        <label for="{{ user_form.email.id_for_label }}" class="form-label">{{ user_form.email.label }}</label>
+                        {{ user_form.email }}
+                        {% if user_form.email.help_text %}<div class="form-text">{{ user_form.email.help_text }}</div>{% endif %}
+                        {% if user_form.email.errors %}<div class="invalid-feedback d-block">{{ user_form.email.errors.as_text }}</div>{% endif %}
+                    </div>
 
-        <hr style="margin: 40px 0;"> {# Ayırıcı #}
+                    <button type="submit" name="update_profile" class="btn btn-coffee"><i class="bi bi-save"></i> Bilgilerimi Güncelle</button>
+                </form>
+            </div>
+        </div>
 
-        {# Şifre Değiştirme Formu #}
-        <h2>Şifre Değiştir</h2>
-        <form method="POST">
-            {% csrf_token %}
-            {# password_form context değişkenini kullanarak formu render et #}
-            {{ password_form.as_p }} {# Eski şifre, Yeni şifre, Yeni şifre tekrar #}
-            {# Butona isim vererek formu ayırt ediyoruz (views.py içinde) #}
-            <button type="submit" name="change_password" class="submit-button">Şifremi Güncelle</button>
-        </form>
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <h2 class="h5 mb-0">Şifre Değiştir</h2>
+            </div>
+            <div class="card-body">
+                <form method="POST">
+                    {% csrf_token %}
+                    {# password_form (Eski, Yeni, Yeni Tekrar) #}
+                    {# Formdaki her alan (p) için döngü #}
+                    {% for field in password_form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {# Alanı manuel olarak render edip class ekleyelim #}
+                            <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}" 
+                                   class="form-control" {% if field.field.required %}required{% endif %}>
 
-        <a href="{% url 'accounts:dashboard' %}" class="back-link">&laquo; Ana Panele Geri Dön</a> {# Namespace kullanıldı #}
+                            {% if field.help_text %}<div class="form-text">{{ field.help_text|safe }}</div>{% endif %}
+                            {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors.as_text }}</div>{% endif %}
+                        </div>
+                    {% endfor %}
+
+                    <button type="submit" name="change_password" class="btn btn-coffee-light"><i class="bi bi-key-fill"></i> Şifremi Güncelle</button>
+                </form>
+            </div>
+        </div>
+
     </div>
-</body>
-</html>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{# Bu sayfanın özel bir script'e ihtiyacı yok #}
+{% endblock %}

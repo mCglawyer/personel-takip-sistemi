@@ -57,12 +57,7 @@ INSTALLED_APPS = [
     'pwa',                           # django-pwa paketi
     # Bizim Uygulamalarımız
     'accounts',
-    # Özel template filtreleri için (templatetags klasörü varsa)
-    'accounts.templatetags.custom_filters' if os.path.isdir(BASE_DIR / 'accounts/templatetags') else None,
 ]
-# None olanları listeden temizle
-INSTALLED_APPS = [app for app in INSTALLED_APPS if app is not None]
-
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     # Whitenoise Middleware (SecurityMiddleware'den hemen sonra gelmeli)
@@ -90,14 +85,11 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
             ],
             'builtins': [
-                'accounts.templatetags.custom_filters' if 'accounts.templatetags.custom_filters' in INSTALLED_APPS else '',
+        
             ],
         },
     },
 ]
-TEMPLATES[0]['OPTIONS']['builtins'] = [b for b in TEMPLATES[0]['OPTIONS']['builtins'] if b]
-
-
 WSGI_APPLICATION = 'shift_takip.wsgi.application'
 
 

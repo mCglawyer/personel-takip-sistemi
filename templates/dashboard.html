@@ -1,7 +1,7 @@
-{% extends 'base.html' %} {# Ana şablondan (kahve temalı) miras alır #}
+{% extends 'base.html' %} {# Ana şablonu (kahve temalı) miras alır #}
 {% load static %}
-{% load custom_filters %} {# has_group ve get_item filtrelerini yükler #}
-{% load pwa %} {# PWA etiketleri için (base.html'de zaten olabilir ama tekrar yüklemek zarar vermez) #}
+{% load custom_filters %} {# has_group filtresini kullanabilmek için #}
+{% load pwa %} {# PWA meta etiketleri için #}
 
 {# Sayfa başlığını base.html'e gönder #}
 {% block title %}Ana Panel - {{ user.username }}{% endblock %}
@@ -22,7 +22,6 @@
         .personnel-controls { margin-bottom: 25px; }
         .personnel-controls a { display: inline-block; padding: 10px 18px; text-decoration: none; border-radius: 5px; font-weight: 600; margin-right: 10px; margin-bottom: 10px; transition: opacity 0.2s ease;}
         .personnel-controls a:hover { opacity: 0.85; }
-        /* Renkler base.html'den gelen btn-coffee, btn-coffee-light'ı kullanacak */
         .personnel-controls a.requests-link { background-color: #6c757d; color: white; } /* Taleplerim butonu */
         .personnel-controls a.qr-scan-link { background-color: #007bff; color: white; } /* QR Tarayıcı (Bootstrap mavisi) */
         
@@ -65,7 +64,9 @@
         .status-box.no-break { background-color: #f0fff4; border-color: #28a745; color: #155724; }
         .status-box h3 { margin-top: 0; font-size: 1.2rem;}
         .status-box p { font-size: 1rem; margin-bottom: 5px;}
+        .personnel-controls { margin-bottom: 25px; }
         .personnel-controls a { display: inline-block; padding: 10px 18px; text-decoration: none; border-radius: 5px; font-weight: 600; margin-right: 10px; margin-bottom: 10px; transition: opacity 0.2s ease;}
+        .personnel-controls a:hover { opacity: 0.85; }
         .personnel-controls a.requests-link { background-color: #6c757d; color: white; }
         .personnel-controls a.qr-scan-link { background-color: #007bff; color: white; }
         
@@ -114,6 +115,16 @@
 
                 <h3 class="h5 mt-4">Kişisel Mola Durumu</h3>
                 <div class="personnel-controls mb-3">
+
+                    {# GEÇİCİ TEST BUTONU (QR Kod sorununu atlamak için) #}
+                    {# '1' sayısını canlı veritabanınızdaki geçerli bir Şube ID'si ile değiştirin! #}
+                    <a href="{% url 'accounts:toggle_break' 1 %}" 
+                       class="btn" 
+                       style="background-color: #e63946; color: white; font-weight: bold; border: 2px solid #333;"
+                       onclick="return confirm('Bu bir test butonudur. Şube 1 için mola başlatılsın mı?');">
+                        MOLA BAŞLAT/BİTİR (TEST BUTONU - ŞUBE 1)
+                    </a>
+                    
                     <a href="{% url 'accounts:qr_scanner' %}" class="btn btn-coffee qr-scan-link"><i class="bi bi-qr-code-scan"></i> Mola QR Kodu Tara</a>
                     <a href="{% url 'accounts:my_leave_requests' %}" class="btn btn-secondary requests-link"><i class="bi bi-list-check"></i> Taleplerim</a>
                 </div>
@@ -123,20 +134,20 @@
                         <h3 class="alert-heading"><i class="bi bi-pause-circle-fill"></i> MOLA DURUMU: AKTİF</h3>
                         <p>Şu anda <strong>{{ active_break.branch.name|default:'Bilinmeyen Şube' }}</strong> şubesinde moladasınız.</p>
                         <hr>
-                        <p class="mb-0">Başlangıç: <strong>{{ active_break.start_time|date:"H:i:s" }}</strong>. <em>Bitirmek için QR kodu tekrar okutun.</em></p>
+                        <p class="mb-0">Başlangıç: <strong>{{ active_break.start_time|date:"H:i:s" }}</strong>. <em>Bitirmek için QR kodu tekrar okutun veya Test Butonuna basın.</em></p>
                     </div>
                 {% else %}
                     <div class="alert alert-success shadow-sm status-box no-break">
                         <h3 class="alert-heading"><i class="bi bi-play-circle-fill"></i> MOLA DURUMU: AKTİF DEĞİL</h3>
-                        <p class="mb-0">Şu anda çalışıyorsunuz. <em>Mola başlatmak için QR kodu okutun.</em></p>
+                        <p class="mb-0">Şu anda çalışıyorsunuz. <em>Mola başlatmak için QR kodu okutun veya Test Butonuna basın.</em></p>
                     </div>
                 {% endif %}
                 <h2 class="h5 mt-4">{{ report_title|default:"Genel Mola Takip Raporu" }}</h2>
                 <p class="text-muted">Şu anda aktif (bitmemiş) mola sayısı: <strong>{{ active_breaks_count }}</strong></p>
 
                 <div class="table-responsive">
-                    <table class="table table-striped table-bordered table-hover table-sm"> {# Bootstrap tablo stilleri #}
-                        <thead class="table-light"> {# Başlık için daha açık renk #}
+                    <table class="table table-striped table-bordered table-hover table-sm">
+                        <thead class="table-light">
                             <tr>
                                 <th>Personel</th>
                                 <th>Şube</th>
@@ -154,7 +165,7 @@
                                     {% if break.end_time %}
                                         {{ break.end_time|date:"d N Y, H:i:s" }}
                                     {% else %}
-                                        <span class="badge bg-danger">Devam Ediyor...</span> {# Bootstrap Badge #}
+                                        <span class="badge bg-danger">Devam Ediyor...</span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -177,7 +188,16 @@
         <h1 class="h3 mb-4">Kullanıcı Ekranı</h1>
 
         <div class="personnel-controls">
-            {# Butonları kahve tonlarına güncelledik #}
+
+            {# GEÇİCİ TEST BUTONU (QR Kod sorununu atlamak için) #}
+            {# '1' sayısını canlı veritabanınızdaki geçerli bir Şube ID'si ile değiştirin! #}
+            <a href="{% url 'accounts:toggle_break' 1 %}" 
+               class="btn" 
+               style="background-color: #e63946; color: white; font-weight: bold; border: 2px solid #333;"
+               onclick="return confirm('Bu bir test butonudur. Şube 1 için mola başlatılsın mı?');">
+                MOLA BAŞLAT/BİTİR (TEST BUTONU - ŞUBE 1)
+            </a>
+
             <a href="{% url 'accounts:qr_scanner' %}" class="btn btn-coffee qr-scan-link"><i class="bi bi-qr-code-scan"></i> Mola QR Kodu Tara</a>
             <a href="{% url 'accounts:leave_request_create' %}" class="btn btn-coffee-light"><i class="bi bi-send-plus"></i> Yeni İzin/Rapor Talebi</a>
             <a href="{% url 'accounts:my_leave_requests' %}" class="btn btn-secondary requests-link"><i class="bi bi-list-check"></i> Taleplerim</a>
@@ -188,12 +208,12 @@
                 <h3 class="alert-heading"><i class="bi bi-pause-circle-fill"></i> MOLA DURUMU: AKTİF</h3>
                 <p>Şu anda <strong>{{ active_break.branch.name|default:'Bilinmeyen Şube' }}</strong> şubesinde moladasınız.</p>
                 <hr>
-                <p class="mb-0">Başlangıç: <strong>{{ active_break.start_time|date:"H:i:s" }}</strong>. <em>Molayı bitirmek için QR kodu tekrar okutun.</em></p>
+                <p class="mb-0">Başlangıç: <strong>{{ active_break.start_time|date:"H:i:s" }}</strong>. <em>Molayı bitirmek için QR kodu okutun veya Test Butonuna basın.</em></p>
             </div>
         {% else %}
             <div class="alert alert-success shadow-sm status-box no-break">
                 <h3 class="alert-heading"><i class="bi bi-play-circle-fill"></i> MOLA DURUMU: AKTİF DEĞİL</h3>
-                <p class="mb-0">Şu anda çalışıyorsunuz. <em>Mola başlatmak için QR kodu okutun.</em></p>
+                <p class="mb-0">Şu anda çalışıyorsunuz. <em>Mola başlatmak için QR kodu okutun veya Test Butonuna basın.</em></p>
             </div>
         {% endif %}
 

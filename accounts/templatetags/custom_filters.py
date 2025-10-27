@@ -11,7 +11,14 @@ def has_group(user, group_name):
     Kullanıcının belirli bir grupta olup olmadığını kontrol eder.
     Kullanım: {% if user|has_group:"Grup Adı" %}
     """
+    # Superuser değilse ve giriş yapmışsa gruplarını kontrol et
+    if user.is_authenticated and not user.is_superuser:
+        return user.groups.filter(name=group_name).exists()
+    # Superuser ise veya giriş yapmamışsa (duruma göre)
+    # has_group filtresi admin görünümünde (is_admin=True) ve
+    # user.is_superuser kontrolüyle birlikte kullanıldığı için bu basit kontrol yeterli.
     return user.groups.filter(name=group_name).exists()
+
 
 @register.filter(name='get_item')
 def get_item(dictionary, key):

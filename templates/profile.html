@@ -1,11 +1,12 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {# Ana kahve temalı şablonu kullan #}
 {% load static %}
 
+{# Sayfa başlığını base.html'e gönder #}
 {% block title %}Profilim - {{ user.username }}{% endblock %}
 
 {% block head_styles %}
 <style>
-    /* Form alanlarını biraz daha dar tutmak için */
+    /* Form alanlarını biraz daha dar tutmak için (isteğe bağlı) */
     .form-control {
         max-width: 450px;
     }
@@ -22,30 +23,32 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-10">
+    <div class="col-lg-10 col-xl-8">
 
-        <h1 class="mb-4">Profil Bilgilerim</h1>
+        <h1 class="mb-4 border-bottom pb-2">Profil Bilgilerim</h1>
 
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
+            <div class="card-header bg-light py-3">
                 <h2 class="h5 mb-0">Sabit Bilgiler</h2>
             </div>
             <div class="card-body profile-info">
-                <p><strong>Kullanıcı Adı:</strong> {{ user.username }}</p>
-                <p><strong>Atandığı Şube:</strong> {{ profile.branch.name|default:"Atanmamış" }}</p>
+                <p class="mb-2"><strong>Kullanıcı Adı:</strong> {{ user.username }}</p>
+                <p class="mb-0"><strong>Atandığı Şube:</strong> {{ profile.branch.name|default:"Atanmamış" }}</p>
             </div>
         </div>
 
         <div class="card shadow-sm mb-4">
-            <div class="card-header bg-light">
+            <div class="card-header bg-light py-3">
                 <h2 class="h5 mb-0">Kişisel Bilgileri Güncelle</h2>
             </div>
             <div class="card-body">
                 <form method="POST">
                     {% csrf_token %}
                     {# user_form (Ad, Soyad, E-posta) #}
+                    {# Formu Bootstrap'e uygun hale getirelim #}
                     <div class="mb-3">
                         <label for="{{ user_form.first_name.id_for_label }}" class="form-label">{{ user_form.first_name.label }}</label>
+                        {# forms.py'da eklediğimiz 'form-control' class'ı burada kullanılacak #}
                         {{ user_form.first_name }}
                         {% if user_form.first_name.errors %}<div class="invalid-feedback d-block">{{ user_form.first_name.errors.as_text }}</div>{% endif %}
                     </div>
@@ -57,36 +60,54 @@
                     <div class="mb-3">
                         <label for="{{ user_form.email.id_for_label }}" class="form-label">{{ user_form.email.label }}</label>
                         {{ user_form.email }}
-                        {% if user_form.email.help_text %}<div class="form-text">{{ user_form.email.help_text }}</div>{% endif %}
+                        {% if user_form.email.help_text %}<div class="form-text text-muted">{{ user_form.email.help_text|safe }}</div>{% endif %}
                         {% if user_form.email.errors %}<div class="invalid-feedback d-block">{{ user_form.email.errors.as_text }}</div>{% endif %}
                     </div>
 
+                    {# Yeni kahve butonu stilini kullan #}
                     <button type="submit" name="update_profile" class="btn btn-coffee"><i class="bi bi-save"></i> Bilgilerimi Güncelle</button>
                 </form>
             </div>
         </div>
 
         <div class="card shadow-sm">
-            <div class="card-header bg-light">
+            <div class="card-header bg-light py-3">
                 <h2 class="h5 mb-0">Şifre Değiştir</h2>
             </div>
             <div class="card-body">
                 <form method="POST">
                     {% csrf_token %}
                     {# password_form (Eski, Yeni, Yeni Tekrar) #}
-                    {# Formdaki her alan (p) için döngü #}
+                    {# Formu Bootstrap'e uygun hale getirelim #}
                     {% for field in password_form %}
                         <div class="mb-3">
                             <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
                             {# Alanı manuel olarak render edip class ekleyelim #}
                             <input type="{{ field.field.widget.input_type }}" name="{{ field.name }}" id="{{ field.id_for_label }}" 
-                                   class="form-control" {% if field.field.required %}required{% endif %}>
+                                   class="form-control" autocomplete="{% if 'old_password' in field.name %}current-password{% else %}new-password{% endif %}"
+                                   {% if field.field.required %}required{% endif %}>
 
-                            {% if field.help_text %}<div class="form-text">{{ field.help_text|safe }}</div>{% endif %}
-                            {% if field.errors %}<div class="invalid-feedback d-block">{{ field.errors.as_text }}</div>{% endif %}
+                            {% if field.help_text %}<div class="form-text text-muted">{{ field.help_text|safe }}</div>{% endif %}
+                            {# Hata mesajları için (ul.errorlist yerine) #}
+                            {% if field.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in field.errors %}
+                                        <span>{{ error }}</span><br>
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
                         </div>
                     {% endfor %}
+                    {# Formun genel hataları (varsa) #}
+                    {% if password_form.non_field_errors %}
+                        <div class="alert alert-danger">
+                            {% for error in password_form.non_field_errors %}
+                                <span>{{ error }}</span><br>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
 
+                    {# Yeni açık kahve butonu stilini kullan #}
                     <button type="submit" name="change_password" class="btn btn-coffee-light"><i class="bi bi-key-fill"></i> Şifremi Güncelle</button>
                 </form>
             </div>

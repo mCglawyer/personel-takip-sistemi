@@ -5,7 +5,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Personel Sistemi{% endblock %}</title> {# Sayfa başlığı için blok #}
+    <title>{% block title %}GeekPanel{% endblock %}</title> {# Varsayılan başlık #}
 
     {% progressive_web_app_meta %} {# PWA meta etiketleri #}
 
@@ -14,6 +14,13 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 
     <style>
+        :root {
+            --coffee-dark: #4a3f35;  /* Koyu Kahve (Espresso) */
+            --coffee-medium: #6f4e37; /* Orta Kahve (Kahve) */
+            --coffee-light: #a47551; /* Açık Kahve (Latte) */
+            --coffee-cream: #f5f5dc; /* Krem/Bej */
+        }
+
         body {
             background-color: #f8f9fa; /* Hafif gri arka plan */
         }
@@ -22,6 +29,42 @@
             display: flex;
             flex-direction: column;
         }
+
+        /* Navigasyon Çubuğu için Koyu Kahve */
+        .bg-coffee-dark {
+            background-color: var(--coffee-dark) !important;
+        }
+
+        /* Ana Buton Stili (Koyu Kahve) */
+        .btn-coffee {
+            background-color: var(--coffee-medium);
+            color: white;
+            border: none;
+        }
+        .btn-coffee:hover {
+            background-color: var(--coffee-dark); /* Hover'da daha koyu */
+            color: white;
+        }
+
+        /* İkincil Buton Stili (Açık Kahve) */
+        .btn-coffee-light {
+            background-color: var(--coffee-light);
+            color: white;
+            border: none;
+        }
+        .btn-coffee-light:hover {
+            background-color: var(--coffee-medium);
+            color: white;
+        }
+
+        /* Bootstrap Tablolarını Güzelleştirme */
+        .table-hover tbody tr:hover {
+            background-color: var(--coffee-cream); /* Satır üzerine gelince krem rengi */
+        }
+        .table th {
+            background-color: #f1f1f1; /* Başlıklar için hafif gri */
+        }
+
     </style>
 
     {# Her sayfanın kendi özel stillerini ekleyebileceği blok #}
@@ -30,28 +73,50 @@
 <body class="d-flex flex-column h-100">
     <div class="content-wrapper">
 
-        {# NAVİGASYON (Header) #}
-        {# Sadece giriş yapmış kullanıcılara header gösterelim #}
+        {# NAVİGASYON (Header) - Artık Koyu Kahve #}
         {% if request.user.is_authenticated %}
-        <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top shadow-sm">
+        <nav class="navbar navbar-expand-lg navbar-dark bg-coffee-dark sticky-top shadow-sm">
             <div class="container-fluid">
-                <a class="navbar-brand" href="{% url 'accounts:dashboard' %}">
-                    {# Buraya logonuzu da koyabilirsiniz #}
+                <a class="navbar-brand fw-bold" href="{% url 'accounts:dashboard' %}">
+                    {# Buraya logonuzun küçük bir versiyonunu da koyabilirsiniz #}
                     GeekPanel
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarMain" aria-controls="navbarMain" aria-expanded="false" aria-label="Toggle navigation">
                     <span class="navbar-toggler-icon"></span>
                 </button>
                 <div class="collapse navbar-collapse" id="navbarMain">
-                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'accounts:dashboard' %}"><i class="bi bi-speedometer2"></i> Ana Panel</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'accounts:profile' %}"><i class="bi bi-person-circle"></i> Profilim</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" href="{% url 'accounts:logout' %}"><i class="bi bi-box-arrow-right"></i> Çıkış Yap</a>
+                    {# ms-auto = sağa yasla #}
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0 align-items-center">
+                        {# Yöneticiye özel linkler (Opsiyonel) #}
+                        {% if is_admin %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'accounts:weekly_schedule_select' %}"><i class="bi bi-calendar-week"></i> Vardiya Planla</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'accounts:personnel_list' %}"><i class="bi bi-people-fill"></i> Personel</a>
+                            </li>
+                        {% endif %}
+
+                        {# Personel linkleri #}
+                        {% if not is_admin %}
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'accounts:qr_scanner' %}"><i class="bi bi-qr-code-scan"></i> Mola Tara</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'accounts:my_leave_requests' %}"><i class="bi bi-card-list"></i> Taleplerim</a>
+                            </li>
+                        {% endif %}
+
+                        {# Ortak linkler (Sağda) #}
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarUserDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="bi bi-person-circle"></i> {{ request.user.first_name|default:request.user.username }}
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarUserDropdown">
+                                <li><a class="dropdown-item" href="{% url 'accounts:profile' %}"><i class="bi bi-gear-fill"></i> Profilim / Şifre Değiştir</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li><a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}"><i class="bi bi-box-arrow-right"></i> Çıkış Yap</a></li>
+                            </ul>
                         </li>
                     </ul>
                 </div>
@@ -61,7 +126,7 @@
 
         {# ANA İÇERİK BÖLÜMÜ #}
         <main class="container my-4 flex-grow-1">
-            {# Django Mesaj Framework'ü için alan #}
+            {# Django Mesaj Framework'ü (Bootstrap Alert ile) #}
             {% if messages %}
                 {% for message in messages %}
                     <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="alert">
@@ -71,7 +136,6 @@
                 {% endfor %}
             {% endif %}
 
-            {# Diğer template'lerin içeriği bu bloğun içine girecek #}
             {% block content %}
             {% endblock %}
         </main>
@@ -79,7 +143,7 @@
         {# FOOTER (Alt Kısım) #}
         <footer class="footer mt-auto py-3 bg-light border-top">
             <div class="container text-center">
-                <span class="text-muted">© {% now "Y" %} GeekPanel - Personel Takip Sistemi</span>
+                <span class="text-muted">© {% now "Y" %} GeekPanel (Personel Takip Sistemi)</span>
             </div>
         </footer>
 

@@ -1,31 +1,22 @@
-# shift_takip/urls.py (En Güncel ve Tam Hali - PWA Dahil - 23 Ekim 2025)
+# shift_takip/urls.py (DÜZELTİLMİŞ VE TEMİZ HALİ)
 
-"""
-URL configuration for shift_takip project.
-
-This `urlpatterns` list routes URLs to views. It includes:
-- The Django admin site.
-- URLs required by the django-pwa package (manifest, serviceworker, offline page) at the root.
-- The root URL ('') pointing to the login page.
-- All other application URLs prefixed under '/app/', included from accounts.urls.
-"""
 from django.contrib import admin
-# include fonksiyonunu path ile birlikte import ediyoruz
-from django.urls import path, include
-# Giriş sayfası (ana sayfa) için accounts.views'dan login_view'ı import ediyoruz
-from accounts import views as accounts_views
+from django.urls import path, include # 'include' import edilmiş olmalı
+from accounts import views as accounts_views # 'login_view' için bu gerekli
 
 urlpatterns = [
-    # 1. Django Admin Paneli -> /admin/
+    # 1. Django Admin Paneli
     path('admin/', admin.site.urls),
-    
-     # 3. Giriş Ekranı (Ana Sayfa) -> /
-    # Projenin kök URL'i doğrudan giriş sayfasını gösterir.
-    # PWA URL'lerinden SONRA gelmesi önemlidir.
+
+    # 2. PWA URL'leri (serviceworker.js, manifest.json vb. için)
+    # BU, login_view'dan ÖNCE gelmeli
+    path('', include('pwa.urls')),
+
+    # 3. Giriş Ekranı (Ana Sayfa)
+    # Kök URL ('') için ana giriş sayfamız
     path('', accounts_views.login_view, name='login'),
 
-    # 4. Uygulama URL'leri -> /app/ ile başlayan tüm URL'ler
-    # Django, '/app/' ile başlayan bir istek aldığında,
-    # kontrolü 'accounts.urls' (yani accounts/urls.py) dosyasına devreder.
+    # 4. Uygulama URL'leri (/app/ altında)
+    # Diğer tüm sayfalar (dashboard, mola, profil vb.)
     path('app/', include('accounts.urls')),
 ]

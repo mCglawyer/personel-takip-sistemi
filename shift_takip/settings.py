@@ -188,6 +188,6 @@ PWA_APP_ICONS = [
 ]
 PWA_APP_ICONS_APPLE = [
     {'src': '/static/images/icons/180.png', 'sizes': '180x180'}
+]
 
 PWA_SERVICE_WORKER_PATH = None  
-]

@@ -14,8 +14,8 @@ from django.utils.text import slugify
 class Branch(models.Model):
     """Şirketin farklı şubelerini temsil eder."""
     name = models.CharField(max_length=100, verbose_name="Şube Adı")
-    
-    # YENİ ALAN: URL'de ID yerine bunu kullanacağız
+
+    # URL'de kullanılacak benzersiz, 'vadipark-subesi' gibi bir tanımlayıcı
     slug = models.SlugField(
         max_length=120, 
         unique=True,    # Benzersiz olmalı
@@ -26,13 +26,25 @@ class Branch(models.Model):
     def __str__(self):
         return self.name
 
-    # YENİ METOD: Model kaydedilirken slug'ı otomatik oluştur
+    # 'save' metodu __str__ ile aynı girinti seviyesinde (sınıfın içinde)
     def save(self, *args, **kwargs):
         """Model kaydedilirken, 'name' alanından slug oluşturur."""
-        if not self.slug or self.name != Branch.objects.get(pk=self.pk).name:
-            # Slug boşsa VEYA şubenin adı değiştiyse yeni slug oluştur
+
+        is_new = self.pk is None # Bu yeni bir şube mi?
+        old_name = None
+        if not is_new:
+            # Eğer eski şubeyse, eski adını al
+            # Hata almamak için varlığını kontrol et
+            try:
+                old_name = Branch.objects.get(pk=self.pk).name
+            except Branch.DoesNotExist:
+                pass # Henüz veritabanında yoksa (çok nadir bir durum)
+
+        # Sadece YENİ bir şubeyse VEYA slug alanı boşsa VEYA adı değiştiyse
+        # yeniden slug oluştur:
+        if is_new or not self.slug or self.name != old_name:
             self.slug = slugify(self.name, allow_unicode=True) # Türkçe karakterleri destekle
-            
+
             # Aynı slug'dan varsa sonuna sayı ekle
             original_slug = self.slug
             counter = 1

@@ -1,7 +1,7 @@
 {% extends 'base.html' %} {# Ana şablonu (kahve temalı) miras alır #}
 {% load static %}
-{# {% load custom_filters %} <-- TAMAMEN KALDIRILDI #}
-{% load pwa %} {# PWA etiketleri için #}
+{% load custom_filters %} {# HAS_GROUP FİLTRESİ İÇİN BU SATIR ZORUNLU! #}
+{% load pwa %} {# PWA meta etiketleri için #}
 
 {# Sayfa başlığını base.html'e gönder #}
 {% block title %}Ana Panel - {{ user.username }}{% endblock %}
@@ -18,12 +18,11 @@
         .fc .fc-daygrid-day-number { padding: 4px; }
         .fc .fc-col-header-cell-cushion { padding: 5px 4px; }
 
-        /* Personel butonları için özel stil (base.html'dekine ek) */
         .personnel-controls { margin-bottom: 25px; }
         .personnel-controls a { display: inline-block; padding: 10px 18px; text-decoration: none; border-radius: 5px; font-weight: 600; margin-right: 10px; margin-bottom: 10px; transition: opacity 0.2s ease;}
         .personnel-controls a:hover { opacity: 0.85; }
         .personnel-controls a.requests-link { background-color: #6c757d; color: white; } /* Taleplerim butonu */
-        .personnel-controls a.qr-scan-link { background-color: #007bff; color: white; } /* QR Tarayıcı (Bootstrap mavisi) */
+        /* Mola Butonu Stilleri (base.html'den btn-coffee alacak) */
 
         /* Mola Durumu Kutusu Stilleri */
         .status-box { padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid; }
@@ -33,7 +32,6 @@
         .status-box p { font-size: 1rem; margin-bottom: 5px;}
         .status-box em { font-size: 0.9rem; color: #555;}
 
-        /* Mobil uyumluluk */
         @media (max-width: 768px) {
             #calendar { padding: 5px; margin: 10px auto; }
             .fc .fc-toolbar-title { font-size: 1.1em; }
@@ -64,11 +62,12 @@
         .status-box.no-break { background-color: #f0fff4; border-color: #28a745; color: #155724; }
         .status-box h3 { margin-top: 0; font-size: 1.2rem;}
         .status-box p { font-size: 1rem; margin-bottom: 5px;}
+
+        /* Personel Kontrol Stilleri (Yönetici Paneli İçinde) */
         .personnel-controls { margin-bottom: 25px; }
         .personnel-controls a { display: inline-block; padding: 10px 18px; text-decoration: none; border-radius: 5px; font-weight: 600; margin-right: 10px; margin-bottom: 10px; transition: opacity 0.2s ease;}
         .personnel-controls a:hover { opacity: 0.85; }
         .personnel-controls a.requests-link { background-color: #6c757d; color: white; }
-        .personnel-controls a.qr-scan-link { background-color: #007bff; color: white; }
 
         @media (max-width: 768px) {
             .admin-controls a.btn { display: block; margin-right: 0; }
@@ -104,23 +103,34 @@
                         <a href="{% url 'accounts:personnel_list' %}" class="btn btn-coffee"><i class="bi bi-people-fill"></i> Personel Yönetimi</a>
                         <a href="{% url 'accounts:pending_leave_requests' %}" class="btn btn-coffee"><i class="bi bi-clock-history"></i> Bekleyen İzin Talepleri</a>
 
-                        {# HATA DÜZELTMESİ: IF BLOĞU GEÇİCİ OLARAK KALDIRILDI #}
-                        {# Bu butonları artık TÜM yöneticiler (Şefler dahil) görecek #}
-                        <a href="{% url 'accounts:exceeded_breaks_report' %}" class="btn btn-coffee-light"><i class="bi bi-exclamation-triangle"></i> Mola Süresini Aşanlar</a>
-                        <a href="{% url 'accounts:break_report_select' %}" class="btn btn-coffee-light"><i class="bi bi-graph-up"></i> Haftalık Mola Raporu</a>
-                        <a href="{% url 'accounts:attendance_report_select' %}" class="btn btn-coffee-light"><i class="bi bi-file-earmark-spreadsheet"></i> Aylık Puantaj Raporu</a>
-
+                        {# Sadece Bölge Yöneticisi ve Superuser için Rapor Butonları #}
+                        {# DÜZELTME: BU BLOK ARTIK ÇALIŞMALI #}
+                        {% if user|has_group:"Bölge Yöneticisi" or user.is_superuser %}
+                            <a href="{% url 'accounts:exceeded_breaks_report' %}" class="btn btn-coffee-light"><i class="bi bi-exclamation-triangle"></i> Mola Süresini Aşanlar</a>
+                            <a href="{% url 'accounts:break_report_select' %}" class="btn btn-coffee-light"><i class="bi bi-graph-up"></i> Haftalık Mola Raporu</a>
+                            <a href="{% url 'accounts:attendance_report_select' %}" class="btn btn-coffee-light"><i class="bi bi-file-earmark-spreadsheet"></i> Aylık Puantaj Raporu</a>
+                        {% endif %}
                     </div>
                 </div>
 
                 <h3 class="h5 mt-4">Kişisel Mola Durumu</h3>
                 <div class="personnel-controls mb-3">
-                    <a href="{% url 'accounts:toggle_break' 1 %}" 
-                       class="btn" 
-                       style="background-color: #e63946; color: white; font-weight: bold; border: 2px solid #333;"
-                       onclick="return confirm('Bu bir test butonudur. Şube 1 için mola başlatılsın mı?');">
-                        MOLA BAŞLAT/BİTİR (TEST BUTONU - ŞUBE 1)
-                    </a>
+
+                    {# DÜZELTME: QR TARAYICI BUTONU KALDIRILDI, TEST BUTONU KALICI HALE GETİRİLDİ #}
+                    {% if personnel_branch_slug %}
+                        <a href="{% url 'accounts:toggle_break' personnel_branch_slug %}" 
+                           class="btn {% if active_break %}btn-danger{% else %}btn-coffee{% endif %}" 
+                           style="font-weight: bold;">
+                            {% if active_break %}
+                                <i class="bi bi-stop-circle-fill"></i> MOLAYI BİTİR (Şube: {{ user.profile.branch.name }})
+                            {% else %}
+                                <i class="bi bi-play-circle-fill"></i> MOLA BAŞLAT (Şube: {{ user.profile.branch.name }})
+                            {% endif %}
+                        </a>
+                    {% else %}
+                        <div class="alert alert-warning small p-2">Mola verebilmek için profilinize bir şube atanmış olmalıdır.</div>
+                    {% endif %}
+
                     <a href="{% url 'accounts:my_leave_requests' %}" class="btn btn-secondary requests-link"><i class="bi bi-list-check"></i> Taleplerim</a>
                 </div>
 
@@ -129,12 +139,12 @@
                         <h3 class="alert-heading"><i class="bi bi-pause-circle-fill"></i> MOLA DURUMU: AKTİF</h3>
                         <p>Şu anda <strong>{{ active_break.branch.name|default:'Bilinmeyen Şube' }}</strong> şubesinde moladasınız.</p>
                         <hr>
-                        <p class="mb-0">Başlangıç: <strong>{{ active_break.start_time|date:"H:i:s" }}</strong>. <em>Bitirmek için Test Butonuna basın.</em></p>
+                        <p class="mb-0">Başlangıç: <strong>{{ active_break.start_time|date:"H:i:s" }}</strong>. <em>Bitirmek için Mola Butonuna basın.</em></p>
                     </div>
                 {% else %}
                     <div class="alert alert-success shadow-sm status-box no-break">
                         <h3 class="alert-heading"><i class="bi bi-play-circle-fill"></i> MOLA DURUMU: AKTİF DEĞİL</h3>
-                        <p class="mb-0">Şu anda çalışıyorsunuz. <em>Mola başlatmak için Test Butonuna basın.</em></p>
+                        <p class="mb-0">Şu anda çalışıyorsunuz. <em>Mola başlatmak için Mola Butonuna basın.</em></p>
                     </div>
                 {% endif %}
                 <h2 class="h5 mt-4">{{ report_title|default:"Genel Mola Takip Raporu" }}</h2>
@@ -183,12 +193,22 @@
         <h1 class="h3 mb-4">Kullanıcı Ekranı</h1>
 
         <div class="personnel-controls">
-            <a href="{% url 'accounts:toggle_break' 1 %}" 
-               class="btn" 
-               style="background-color: #e63946; color: white; font-weight: bold; border: 2px solid #333;"
-               onclick="return confirm('Bu bir test butonudur. Şube 1 için mola başlatılsın mı?');">
-                MOLA BAŞLAT/BİTİR (TEST BUTONU - ŞUBE 1)
-            </a>
+
+            {# DÜZELTME: QR TARAYICI BUTONU KALDIRILDI, TEST BUTONU KALICI HALE GETİRİLDİ #}
+            {% if personnel_branch_slug %}
+                <a href="{% url 'accounts:toggle_break' personnel_branch_slug %}" 
+                   class="btn {% if active_break %}btn-danger{% else %}btn-coffee{% endif %}" 
+                   style="font-weight: bold;">
+                    {% if active_break %}
+                        <i class="bi bi-stop-circle-fill"></i> MOLAYI BİTİR (Şube: {{ user.profile.branch.name }})
+                    {% else %}
+                        <i class="bi bi-play-circle-fill"></i> MOLA BAŞLAT (Şube: {{ user.profile.branch.name }})
+                    {% endif %}
+                </a>
+            {% else %}
+                <div class="alert alert-warning small p-2">Mola sistemini kullanabilmek için bir şubeye atanmış olmanız gerekir. Lütfen yöneticinizle iletişime geçin.</div>
+            {% endif %}
+
             <a href="{% url 'accounts:leave_request_create' %}" class="btn btn-coffee-light"><i class="bi bi-send-plus"></i> Yeni İzin/Rapor Talebi</a>
             <a href="{% url 'accounts:my_leave_requests' %}" class="btn btn-secondary requests-link"><i class="bi bi-list-check"></i> Taleplerim</a>
         </div>
@@ -198,12 +218,12 @@
                 <h3 class="alert-heading"><i class="bi bi-pause-circle-fill"></i> MOLA DURUMU: AKTİF</h3>
                 <p>Şu anda <strong>{{ active_break.branch.name|default:'Bilinmeyen Şube' }}</strong> şubesinde moladasınız.</p>
                 <hr>
-                <p class="mb-0">Başlangıç: <strong>{{ active_break.start_time|date:"H:i:s" }}</strong>. <em>Bitirmek için Test Butonuna basın.</em></p>
+                <p class="mb-0">Başlangıç: <strong>{{ active_break.start_time|date:"H:i:s" }}</strong>. <em>Bitirmek için Mola Butonuna basın.</em></p>
             </div>
         {% else %}
             <div class="alert alert-success shadow-sm status-box no-break">
                 <h3 class="alert-heading"><i class="bi bi-play-circle-fill"></i> MOLA DURUMU: AKTİF DEĞİL</h3>
-                <p class="mb-0">Şu anda çalışıyorsunuz. <em>Mola başlatmak için Test Butonuna basın.</em></p>
+                <p class="mb-0">Şu anda çalışıyorsunuz. <em>Mola başlatmak için Mola Butonuna basın.</em></p>
             </div>
         {% endif %}
 

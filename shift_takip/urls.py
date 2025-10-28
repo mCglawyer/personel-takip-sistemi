@@ -18,13 +18,8 @@ from accounts import views as accounts_views
 urlpatterns = [
     # 1. Django Admin Paneli -> /admin/
     path('admin/', admin.site.urls),
-
-    # 2. PWA URL'leri -> /, /manifest.json, /serviceworker.js, /offline
-    # django-pwa paketinin çalışması için GEREKLİDİR.
-    # Projenin kök dizininde olmalı ve genellikle diğer kök path'lerden önce gelmelidir.
-    path('', include('pwa.urls')),
-
-    # 3. Giriş Ekranı (Ana Sayfa) -> /
+    
+     # 3. Giriş Ekranı (Ana Sayfa) -> /
     # Projenin kök URL'i doğrudan giriş sayfasını gösterir.
     # PWA URL'lerinden SONRA gelmesi önemlidir.
     path('', accounts_views.login_view, name='login'),

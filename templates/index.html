@@ -1,8 +1,9 @@
-{% extends 'base.html' %}
+{% extends 'base.html' %} {# Ana şablonu (kahve temalı navbar vb.) miras alır #}
 {% load static %}
+{% load pwa %} {# PWA etiketleri için (base.html'de zaten var ama tekrar eklenebilir) #}
 
 {# Sayfa başlığını base.html'deki bloğa gönder #}
-{% block title %}Sisteme Giriş - Personel Takip{% endblock %}
+{% block title %}Sisteme Giriş - GeekPanel{% endblock %}
 
 {# base.html'deki <style> bloklarını ezelim (giriş sayfası için özel stil) #}
 {% block head_styles %}
@@ -12,11 +13,17 @@
     .content-wrapper {
         justify-content: center; /* İçeriği dikeyde ortala */
         min-height: 100vh;
+        background-color: #f8f9fa; /* Arka planı açık gri yap */
     }
-    /* Footer'ı giriş sayfasında gizle (isteğe bağlı) */
+    /* Footer'ı (alt bilgi) giriş sayfasında gizle */
     .footer {
         display: none;
     }
+    /* Navigasyon çubuğunu (navbar) giriş sayfasında gizle */
+    nav.navbar {
+        display: none;
+    }
+    
     /* İçerik container'ının margin'ini sıfırla */
     main.container {
         margin-top: 0 !important;
@@ -28,6 +35,7 @@
     }
     .login-logo {
         max-width: 180px; /* Logo boyutu */
+        height: auto;
     }
 </style>
 {% endblock %}
@@ -38,11 +46,12 @@
 <div class="row justify-content-center">
     <div class="col-12 col-md-10 col-lg-8">
         {# Bootstrap Kart (Card) bileşeni kullanıyoruz #}
-        <div class="card shadow-sm border-0 login-card">
+        <div class="card shadow border-0 login-card">
             <div class="card-body p-4 p-md-5">
-
+                
                 <div class="text-center mb-4">
-                    <img src="{% static 'images/logo.jpg' %}" alt="Şirket Logosu" class="login-logo mb-3">
+                    {# Logonuzun static/images/logo.png adresinde olduğundan emin olun #}
+                    <img src="{% static 'images/logo.png' %}" alt="Şirket Logosu" class="login-logo mb-3">
                     <h2 class="h3 mb-3 fw-normal">Sisteme Giriş</h2>
                 </div>
 
@@ -62,6 +71,7 @@
                         </div>
                     {% endif %}
 
+                    {# Bootstrap Form Floating Labels #}
                     <div class="form-floating mb-3">
                         <input type="text" class="form-control" id="username" name="username" placeholder="Kullanıcı Adı" required>
                         <label for="username">Kullanıcı Adı / E-posta</label>
@@ -72,13 +82,13 @@
                         <label for="password">Şifre</label>
                     </div>
 
-                    <button class="w-100 btn btn-lg btn-dark" type="submit">GİRİŞ YAP</button> {# Bootstrap Buton Stili #}
+                    <button class="w-100 btn btn-lg btn-dark" type="submit">GİRİŞ YAP</button> {# Koyu renk buton #}
 
                     <div class="text-center mt-3">
-                        <a href="#" class="text-decoration-none">Şifremi Unuttum?</a>
+                        <a href="#" class="text-decoration-none text-muted small">Şifremi Unuttum?</a>
                     </div>
                 </form>
-
+                
             </div>
         </div>
     </div>

@@ -18,7 +18,7 @@ class PersonnelAddForm(forms.ModelForm):
     branch = forms.ModelChoiceField(
         queryset=Branch.objects.all().order_by('name'), # Şubeleri isme göre sırala
         label="Atanacak Şube",
-        required=True, # Şube seçimi zorunlu
+        required=False, # Şube seçimi zorunlu
         empty_label="--- Lütfen Şube Seçin ---" # Boş seçenek metni
     )
 

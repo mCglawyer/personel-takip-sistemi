@@ -1,4 +1,4 @@
-# accounts/views.py (En Güncel ve Tam Hali - QR Tarayıcı Kaldırıldı, Manuel Mola Butonu için Güncellendi - 27 Ekim 2025)
+# accounts/views.py (En Güncel ve Tam Hali - SLUG Kullanımı - QR Tarayıcı Yok)
 
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout, update_session_auth_hash
@@ -89,24 +89,30 @@ def dashboard_view(request):
         # --- YÖNETİCİ GÖRÜNÜMÜ ---
         report_title = "" # Başlığı burada tanımlayalım
         all_breaks = Break.objects.none() # Varsayılan olarak boş liste
+        manager_branch_slug = None # Yöneticinin şube slug'ı
+
+        try:
+            manager_profile = user.profile
+            if manager_profile and manager_profile.branch:
+                manager_branch_slug = manager_profile.branch.slug # Mola butonu için slug'ı al
+                manager_branch = manager_profile.branch
+            else:
+                manager_branch = None
+        except Profile.DoesNotExist:
+             manager_branch = None
+             messages.error(request, "Profil bilgileriniz bulunamadı. Lütfen yöneticinizle iletişime geçin.")
 
         # Rolüne göre mola listesini filtrele:
         if is_report_viewer_or_superuser(user): # Superuser veya Bölge Yön.
             all_breaks = Break.objects.all().order_by('-start_time').select_related('personnel', 'branch')
             report_title = "Genel Mola Takip Raporu (Tüm Şubeler)"
         elif user.groups.filter(name='Şube Şefi').exists(): # Sadece Şube Şefi ise
-            try:
-                manager_branch = user.profile.branch
-                if manager_branch:
-                    all_breaks = Break.objects.filter(branch=manager_branch).order_by('-start_time').select_related('personnel', 'branch')
-                    report_title = f"{manager_branch.name} Şubesi Mola Takip Raporu"
-                else:
-                    report_title = "Genel Mola Takip Raporu (Şube Atanmamış)"
-                    messages.warning(request, "Size atanmış bir şube bulunamadı.")
-            except Profile.DoesNotExist:
-                 all_breaks = Break.objects.none()
-                 report_title = "Genel Mola Takip Raporu (Profil Bulunamadı)"
-                 messages.error(request, "Profil bilgileriniz bulunamadı.")
+            if manager_branch:
+                all_breaks = Break.objects.filter(branch=manager_branch).order_by('-start_time').select_related('personnel', 'branch')
+                report_title = f"{manager_branch.name} Şubesi Mola Takip Raporu"
+            else:
+                report_title = "Genel Mola Takip Raporu (Şube Atanmamış)"
+                messages.warning(request, "Size atanmış bir şube bulunamadı.")
 
         active_breaks_count = all_breaks.filter(end_time=None).count()
 
@@ -115,21 +121,13 @@ def dashboard_view(request):
             personnel=user, end_time=None
         ).select_related('branch').first()
 
-        # Yöneticinin kendi şube ID'sini al (Manuel Mola Butonu için)
-        manager_branch_id = None
-        try:
-            if user.profile and user.profile.branch:
-                manager_branch_id = user.profile.branch.id
-        except Profile.DoesNotExist:
-            pass # Profili yoksa
-
         context.update({
             'is_admin': True,
             'all_breaks_list': all_breaks,
             'active_breaks_count': active_breaks_count,
             'report_title': report_title,
-            'active_break': manager_active_break, # Yöneticinin mola durumu
-            'personnel_branch_id': manager_branch_id, # Yöneticinin şube ID'si
+            'active_break': manager_active_break,
+            'personnel_branch_slug': manager_branch_slug, # Yöneticinin şube slug'ı
         })
         return render(request, 'dashboard.html', context)
 
@@ -168,11 +166,11 @@ def dashboard_view(request):
             if shift.branch: calendar_event['extendedProps'] = {'branch': shift.branch.name}
             calendar_events.append(calendar_event)
 
-        # Personelin şube ID'sini al (Manuel Mola Butonu için)
-        personnel_branch_id = None
+        # Personelin şube slug'ını al (Manuel Mola Butonu için)
+        personnel_branch_slug = None
         try:
             if request.user.profile and request.user.profile.branch:
-                personnel_branch_id = request.user.profile.branch.id
+                personnel_branch_slug = request.user.profile.branch.slug # SLUG KULLAN
         except Profile.DoesNotExist:
             pass
 
@@ -183,7 +181,7 @@ def dashboard_view(request):
             'today': today,
             'start_of_week': start_of_week,
             'end_of_week': end_of_week,
-            'personnel_branch_id': personnel_branch_id, # Personelin şube ID'si
+            'personnel_branch_slug': personnel_branch_slug, # Personelin şube slug'ı
         })
         return render(request, 'dashboard.html', context)
 
@@ -192,47 +190,37 @@ def dashboard_view(request):
 # --------------------------------------------------------------------------
 @login_required(login_url='login')
 def profile_view(request):
-    """Kullanıcının profil bilgilerini gösterir ve şifre değiştirmesine olanak tanır."""
-    user = request.user
-    password_form = PasswordChangeForm(user=user)
-    user_form = UserProfileUpdateForm(instance=user)
-
+    user = request.user; password_form = PasswordChangeForm(user=user); user_form = UserProfileUpdateForm(instance=user)
     if request.method == 'POST':
         if 'change_password' in request.POST:
             password_form = PasswordChangeForm(user=user, data=request.POST)
             if password_form.is_valid():
                 updated_user = password_form.save(); update_session_auth_hash(request, updated_user)
-                messages.success(request, 'Şifreniz başarıyla güncellendi!')
-                return redirect('accounts:profile')
+                messages.success(request, 'Şifreniz başarıyla güncellendi!'); return redirect('accounts:profile')
             else:
-                messages.error(request, 'Şifre değiştirilemedi. Lütfen hataları kontrol edin.')
-                user_form = UserProfileUpdateForm(instance=user)
+                messages.error(request, 'Şifre değiştirilemedi. Lütfen hataları kontrol edin.'); user_form = UserProfileUpdateForm(instance=user)
         elif 'update_profile' in request.POST:
             user_form = UserProfileUpdateForm(request.POST, instance=user)
             if user_form.is_valid():
-                user_form.save()
-                messages.success(request, 'Profil bilgileriniz başarıyla güncellendi!')
+                user_form.save(); messages.success(request, 'Profil bilgileriniz başarıyla güncellendi!')
                 return redirect('accounts:profile')
             else:
-                messages.error(request, 'Profil güncellenemedi. Lütfen hataları kontrol edin.')
-                password_form = PasswordChangeForm(user=user)
-    try:
-        profile = user.profile
-    except Profile.DoesNotExist:
-        profile = None
+                messages.error(request, 'Profil güncellenemedi. Lütfen hataları kontrol edin.'); password_form = PasswordChangeForm(user=user)
+    try: profile = user.profile
+    except Profile.DoesNotExist: profile = None
     context = { 'user': user, 'profile': profile, 'user_form': user_form, 'password_form': password_form }
     return render(request, 'profile.html', context)
 
 # --------------------------------------------------------------------------
-# Mola İşlemleri
+# Mola İşlemleri (SLUG KULLANARAK)
 # --------------------------------------------------------------------------
 
 @login_required(login_url='login')
-def toggle_break_view(request, branch_id):
-    """Manuel buton veya QR kod ile personelin molasını başlatır veya bitirir."""
+def toggle_break_view(request, branch_slug): # ID'den SLUG'a değiştirildi
+    """Manuel buton ile personelin molasını başlatır veya bitirir."""
     personnel = request.user
-    # Gelen ID ile şubeyi bul (Canlı veritabanında olmalı!)
-    branch = get_object_or_404(Branch, id=branch_id)
+    # ID yerine SLUG ile arama yap
+    branch = get_object_or_404(Branch, slug=branch_slug)
     active_break = Break.objects.filter(personnel=personnel, end_time=None).first()
     message = ""
 
@@ -248,17 +236,13 @@ def toggle_break_view(request, branch_id):
     return render(request, 'mola_onay.html', context)
 
 # --- QR KOD TARAYICI FONKSİYONU SİLİNDİ ---
-# def qr_scanner_view(request):
-#     ... (BU FONKSİYON ARTIK YOK) ...
+# def qr_scanner_view(request): ...
 
 # --------------------------------------------------------------------------
 # Raporlar, Planlama, Personel Yönetimi, İzin Talepleri...
-# (Geri kalan tüm view fonksiyonları (exceeded_breaks_report_view, weekly_schedule_select_view,
-# personnel_list_view, leave_request_create_view, pending_leave_requests_view,
-# process_leave_request_view, my_leave_requests_view vb.) aynı kalır)
+# (Geri kalan tüm view fonksiyonları)
 # --------------------------------------------------------------------------
 
-# ... (exceeded_breaks_report_view fonksiyonu) ...
 @login_required(login_url='login')
 @user_passes_test(is_report_viewer_or_superuser, login_url='accounts:dashboard')
 def exceeded_breaks_report_view(request):
@@ -271,7 +255,6 @@ def exceeded_breaks_report_view(request):
     context = {'user': request.user, 'exceeded_list': exceeded_list, 'limit_minutes': limit_minutes}
     return render(request, 'exceeded_report.html', context)
 
-# ... (weekly_schedule_select_view fonksiyonu) ...
 @login_required(login_url='login')
 @user_passes_test(is_manager_or_superuser, login_url='accounts:dashboard')
 def weekly_schedule_select_view(request):
@@ -285,30 +268,29 @@ def weekly_schedule_select_view(request):
             manager_branch = user.profile.branch
             if manager_branch:
                 messages.info(request, f"Yönettiğiniz şube ({manager_branch.name}) için planlama ekranına yönlendirildiniz.")
-                return redirect('accounts:weekly_schedule_branch', branch_id=manager_branch.id)
+                # SLUG ile yönlendir
+                return redirect('accounts:weekly_schedule_branch', branch_slug=manager_branch.slug)
             else:
-                messages.error(request, "Size atanmış bir şube bulunamadı.")
-                return redirect('accounts:dashboard')
+                messages.error(request, "Size atanmış bir şube bulunamadı."); return redirect('accounts:dashboard')
         except Profile.DoesNotExist:
-             messages.error(request, "Profil bilgileriniz bulunamadı.")
-             return redirect('accounts:dashboard')
+             messages.error(request, "Profil bilgileriniz bulunamadı."); return redirect('accounts:dashboard')
     else:
-        messages.error(request, "Bu sayfaya erişim yetkiniz yok.")
-        return redirect('accounts:dashboard')
+        messages.error(request, "Bu sayfaya erişim yetkiniz yok."); return redirect('accounts:dashboard')
 
-# ... (weekly_schedule_view fonksiyonu) ...
 @login_required(login_url='login')
 @user_passes_test(is_manager_or_superuser, login_url='accounts:dashboard')
-def weekly_schedule_view(request, branch_id):
-    branch = get_object_or_404(Branch, id=branch_id)
+def weekly_schedule_view(request, branch_slug): # ID'den SLUG'a değiştirildi
+    branch = get_object_or_404(Branch, slug=branch_slug) # SLUG ile ara
     user = request.user
+    # Güvenlik kontrolünü SLUG ile yap
     if not is_report_viewer_or_superuser(user) and user.groups.filter(name='Şube Şefi').exists():
         try:
-            if user.profile.branch != branch:
+            if user.profile.branch != branch: # Objeleri karşılaştır
                 messages.error(request, "Sadece kendi şubenizi planlayabilirsiniz.")
                 return redirect('accounts:dashboard')
         except Profile.DoesNotExist:
              messages.error(request, "Profiliniz bulunamadı."); return redirect('accounts:dashboard')
+    
     today = timezone.now().date(); start_of_week = today - timedelta(days=today.weekday()); week_days = [start_of_week + timedelta(days=i) for i in range(7)]
     personnel_in_branch = User.objects.filter(is_superuser=False, profile__branch=branch, is_active=True).order_by('username').select_related('profile')
     if request.method == 'POST':
@@ -320,14 +302,14 @@ def weekly_schedule_view(request, branch_id):
                 if shift_type: Shift.objects.update_or_create(personnel=p, date=day, defaults={'shift_type': shift_type, 'branch': branch_obj})
                 else: Shift.objects.filter(personnel=p, date=day).delete()
         messages.success(request, f'{branch.name} şubesi için haftalık plan başarıyla kaydedildi!')
-        return redirect('accounts:weekly_schedule_branch', branch_id=branch.id)
+        return redirect('accounts:weekly_schedule_branch', branch_slug=branch.slug) # SLUG ile yönlendir
+
     existing_shifts = Shift.objects.filter(personnel__in=personnel_in_branch, date__gte=start_of_week, date__lte=week_days[6]).select_related('personnel', 'branch')
     shifts_map = {};
     for shift in existing_shifts: p_id_str=str(shift.personnel.id); day_str=shift.date.strftime('%Y-%m-%d'); shifts_map.setdefault(p_id_str, {})[day_str]=shift
     context = {'user': request.user, 'selected_branch': branch, 'week_days': week_days, 'all_personnel': personnel_in_branch, 'shift_types': SHIFT_TYPES, 'shifts_map': shifts_map}
     return render(request, 'weekly_schedule.html', context)
 
-# ... (break_report_select_view fonksiyonu) ...
 @login_required(login_url='login')
 @user_passes_test(is_manager_or_superuser, login_url='accounts:dashboard')
 def break_report_select_view(request):
@@ -341,36 +323,35 @@ def break_report_select_view(request):
             manager_branch = user.profile.branch
             if manager_branch:
                 messages.info(request, f"Yönettiğiniz şube ({manager_branch.name}) için mola raporuna yönlendirildiniz.")
-                return redirect('accounts:break_report_weekly', branch_id=manager_branch.id)
+                # SLUG ile yönlendir
+                return redirect('accounts:break_report_weekly', branch_slug=manager_branch.slug)
             else:
-                messages.error(request, "Size atanmış bir şube bulunamadı.")
-                return redirect('accounts:dashboard')
+                messages.error(request, "Size atanmış bir şube bulunamadı."); return redirect('accounts:dashboard')
         except Profile.DoesNotExist:
-             messages.error(request, "Profil bilgileriniz bulunamadı.")
-             return redirect('accounts:dashboard')
+             messages.error(request, "Profil bilgileriniz bulunamadı."); return redirect('accounts:dashboard')
     else:
-        messages.error(request, "Bu sayfaya erişim yetkiniz yok.")
-        return redirect('accounts:dashboard')
+        messages.error(request, "Bu sayfaya erişim yetkiniz yok."); return redirect('accounts:dashboard')
 
-# ... (break_report_weekly_view fonksiyonu) ...
 @login_required(login_url='login')
 @user_passes_test(is_manager_or_superuser, login_url='accounts:dashboard')
-def break_report_weekly_view(request, branch_id):
-    branch = get_object_or_404(Branch, id=branch_id)
+def break_report_weekly_view(request, branch_slug): # ID'den SLUG'a değiştirildi
+    branch = get_object_or_404(Branch, slug=branch_slug) # SLUG ile ara
     user = request.user
+    # Güvenlik kontrolünü SLUG/Obje ile yap
     if not is_report_viewer_or_superuser(user) and user.groups.filter(name='Şube Şefi').exists():
         try:
-            if user.profile.branch != branch:
+            if user.profile.branch != branch: # Objeleri karşılaştır
                 messages.error(request, "Sadece kendi şubenizin raporunu görebilirsiniz.")
                 return redirect('accounts:dashboard')
         except Profile.DoesNotExist:
              messages.error(request, "Profiliniz bulunamadı."); return redirect('accounts:dashboard')
+    
     today = timezone.now().date(); start_of_week = today - timedelta(days=today.weekday()); end_of_week = start_of_week + timedelta(days=6)
     weekly_breaks = Break.objects.filter(branch=branch, start_time__date__gte=start_of_week, start_time__date__lte=end_of_week).select_related('personnel').order_by('start_time')
     context = {'user': request.user, 'selected_branch': branch, 'start_of_week': start_of_week, 'end_of_week': end_of_week, 'weekly_breaks_list': weekly_breaks}
     return render(request, 'break_report_weekly.html', context)
 
-# ... (attendance_report_select_view fonksiyonu) ...
+# ... (attendance_report_... view'ları aynı kalır, onlar şube ID/slug kullanmıyor) ...
 @login_required(login_url='login')
 @user_passes_test(is_report_viewer_or_superuser, login_url='accounts:dashboard')
 def attendance_report_select_view(request):
@@ -384,11 +365,10 @@ def attendance_report_select_view(request):
     context = {'user': request.user, 'branches': branches, 'years': years, 'months': months, 'current_year': current_year, 'current_month': timezone.now().month}
     return render(request, 'attendance_report_select.html', context)
 
-# ... (attendance_report_monthly_view fonksiyonu) ...
 @login_required(login_url='login')
 @user_passes_test(is_report_viewer_or_superuser, login_url='accounts:dashboard')
 def attendance_report_monthly_view(request, branch_id, year, month):
-    branch = get_object_or_404(Branch, id=branch_id)
+    branch = get_object_or_404(Branch, id=branch_id) # Bu hala ID kullanıyor, sorun değil.
     try: start_date = date(year, month, 1); num_days = calendar.monthrange(year, month)[1]; end_date = date(year, month, num_days)
     except ValueError: messages.error(request, "Geçersiz tarih seçimi."); return redirect('accounts:attendance_report_select')
     personnel_in_branch = User.objects.filter(is_superuser=False, profile__branch=branch, is_active=True).order_by('username').select_related('profile')
@@ -413,46 +393,86 @@ def attendance_report_monthly_view(request, branch_id, year, month):
     context = {'user': request.user, 'selected_branch': branch, 'selected_year': year, 'selected_month': month, 'start_date': start_date, 'end_date': end_date, 'report_data': report_data}
     return render(request, 'attendance_report_monthly.html', context)
 
-# ... (personnel_list_view fonksiyonu) ...
+# ... (personnel_list_view fonksiyonu - GÜNCELLENDİ) ...
 @login_required(login_url='login')
 @user_passes_test(is_manager_or_superuser, login_url='accounts:dashboard')
 def personnel_list_view(request):
-    personnel_list = User.objects.filter(is_superuser=False).select_related('profile', 'profile__branch').order_by('username')
-    context = {'user': request.user, 'personnel_list': personnel_list}
+    user = request.user; is_branch_specific = False
+    if is_report_viewer_or_superuser(user): # Rapor yetkisi = tam yetki
+        personnel_list = User.objects.filter(is_superuser=False).select_related('profile', 'profile__branch').order_by('username')
+    elif user.groups.filter(name='Şube Şefi').exists():
+        try:
+            manager_branch = user.profile.branch
+            if manager_branch:
+                personnel_list = User.objects.filter(is_superuser=False, profile__branch=manager_branch).select_related('profile', 'profile__branch').order_by('username')
+                is_branch_specific = True
+            else:
+                messages.warning(request, "Size atanmış bir şube olmadığı için personel listesi getirilemedi."); personnel_list = User.objects.none()
+        except Profile.DoesNotExist:
+             messages.error(request, "Profil bilgileriniz bulunamadı."); personnel_list = User.objects.none()
+    else: personnel_list = User.objects.none()
+    context = {'user': user, 'personnel_list': personnel_list, 'is_branch_specific': is_branch_specific}
     return render(request, 'personnel_list.html', context)
 
-# ... (personnel_add_view fonksiyonu) ...
+# ... (personnel_add_view fonksiyonu - GÜNCELLENDİ) ...
 @login_required(login_url='login')
 @user_passes_test(is_manager_or_superuser, login_url='accounts:dashboard')
 def personnel_add_view(request):
+    user = request.user; is_full_manager = is_report_viewer_or_superuser(user); manager_branch = None
+    if not is_full_manager and user.groups.filter(name='Şube Şefi').exists():
+        try:
+            manager_branch = user.profile.branch
+            if not manager_branch:
+                messages.error(request, "Personel ekleyebilmek için bir şubeye atanmış olmanız gerekir."); return redirect('accounts:personnel_list')
+        except Profile.DoesNotExist:
+             messages.error(request, "Profil bilgileriniz bulunamadı."); return redirect('accounts:personnel_list')
     if request.method == 'POST':
         form = PersonnelAddForm(request.POST)
+        if manager_branch: # Şef ise, şubeyi zorunlu ata
+            post_data = request.POST.copy(); post_data['branch'] = manager_branch.id
+            form = PersonnelAddForm(post_data)
         if form.is_valid():
-            new_user = form.save(); selected_branch = form.cleaned_data['branch']
+            new_user = form.save(); selected_branch = form.cleaned_data['branch'] if is_full_manager else manager_branch
             Profile.objects.update_or_create(user=new_user, defaults={'branch': selected_branch})
             messages.success(request, f'Personel "{new_user.username}" başarıyla eklendi ve {selected_branch.name} şubesine atandı.')
             return redirect('accounts:personnel_list')
         else: messages.error(request, 'Lütfen formdaki hataları düzeltin.')
-    else: form = PersonnelAddForm()
-    context = {'user': request.user, 'form': form}
+    else:
+        form = PersonnelAddForm()
+        if manager_branch: del form.fields['branch'] # Şef ise şube alanını kaldır
+    context = {'user': user, 'form': form, 'is_full_manager': is_full_manager, 'manager_branch': manager_branch}
     return render(request, 'personnel_add.html', context)
 
-# ... (personnel_deactivate_view fonksiyonu) ...
+# ... (personnel_deactivate_view fonksiyonu - GÜNCELLENDİ) ...
 @login_required(login_url='login')
 @user_passes_test(is_manager_or_superuser, login_url='accounts:dashboard')
 def personnel_deactivate_view(request, user_id):
-    target_user = get_object_or_404(User, id=user_id)
-    if target_user.is_superuser or target_user == request.user: messages.error(request, "Bu hesap dondurulamaz."); return redirect('accounts:personnel_list')
+    target_user = get_object_or_404(User.objects.select_related('profile'), id=user_id); user = request.user
+    if target_user.is_superuser or target_user == user: messages.error(request, "Bu hesap dondurulamaz."); return redirect('accounts:personnel_list')
+    if not is_report_viewer_or_superuser(user) and user.groups.filter(name='Şube Şefi').exists():
+        try:
+            manager_branch = user.profile.branch
+            if not manager_branch or not hasattr(target_user, 'profile') or target_user.profile.branch != manager_branch:
+                messages.error(request, "Sadece kendi şubenizdeki personelleri dondurabilirsiniz."); return redirect('accounts:personnel_list')
+        except Profile.DoesNotExist:
+             messages.error(request, "Profil bilgileriniz bulunamadı."); return redirect('accounts:personnel_list')
     if request.method == 'POST': target_user.is_active = False; target_user.save(); messages.warning(request, f'Personel "{target_user.username}" hesabı donduruldu.')
     else: messages.warning(request, "Geçersiz istek.")
     return redirect('accounts:personnel_list')
 
-# ... (personnel_activate_view fonksiyonu) ...
+# ... (personnel_activate_view fonksiyonu - GÜNCELLENDİ) ...
 @login_required(login_url='login')
 @user_passes_test(is_manager_or_superuser, login_url='accounts:dashboard')
 def personnel_activate_view(request, user_id):
-    target_user = get_object_or_404(User, id=user_id, is_active=False)
-    if target_user == request.user: return redirect('accounts:personnel_list')
+    target_user = get_object_or_404(User.objects.select_related('profile'), id=user_id, is_active=False); user = request.user
+    if target_user == user: return redirect('accounts:personnel_list')
+    if not is_report_viewer_or_superuser(user) and user.groups.filter(name='Şube Şefi').exists():
+        try:
+            manager_branch = user.profile.branch
+            if not manager_branch or not hasattr(target_user, 'profile') or target_user.profile.branch != manager_branch:
+                messages.error(request, "Sadece kendi şubenizdeki personelleri aktifleştirebilirsiniz."); return redirect('accounts:personnel_list')
+        except Profile.DoesNotExist:
+             messages.error(request, "Profil bilgileriniz bulunamadı."); return redirect('accounts:personnel_list')
     if request.method == 'POST': target_user.is_active = True; target_user.save(); messages.success(request, f'Personel "{target_user.username}" hesabı tekrar aktifleştirildi.')
     else: messages.warning(request, "Geçersiz istek.")
     return redirect('accounts:personnel_list')

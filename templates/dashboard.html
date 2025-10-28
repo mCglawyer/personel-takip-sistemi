@@ -1,7 +1,8 @@
 {% extends 'base.html' %} {# Ana şablonu (kahve temalı) miras alır #}
 {% load static %}
-{# {% load custom_filters %} #}  <-- BU SATIRI YORUM YAPIN VEYA SİLİN
-{% load pwa %}
+{% load custom_filters %} {# HAS_GROUP FİLTRESİ İÇİN BU SATIR ZORUNLU! #}
+{% load pwa %} {# PWA meta etiketleri için #}
+
 {# Sayfa başlığını base.html'e gönder #}
 {% block title %}Ana Panel - {{ user.username }}{% endblock %}
 
@@ -23,7 +24,7 @@
         .personnel-controls a:hover { opacity: 0.85; }
         .personnel-controls a.requests-link { background-color: #6c757d; color: white; } /* Taleplerim butonu */
         .personnel-controls a.qr-scan-link { background-color: #007bff; color: white; } /* QR Tarayıcı (Bootstrap mavisi) */
-        
+
         /* Mola Durumu Kutusu Stilleri */
         .status-box { padding: 20px; border-radius: 8px; margin-bottom: 25px; border: 1px solid; }
         .status-box.active-break { background-color: #fff0f0; border-color: #d93025; color: #721c24; }
@@ -31,7 +32,7 @@
         .status-box h3 { margin-top: 0; font-size: 1.2rem;}
         .status-box p { font-size: 1rem; margin-bottom: 5px;}
         .status-box em { font-size: 0.9rem; color: #555;}
-        
+
         /* Mobil uyumluluk */
         @media (max-width: 768px) {
             #calendar { padding: 5px; margin: 10px auto; }
@@ -68,7 +69,7 @@
         .personnel-controls a:hover { opacity: 0.85; }
         .personnel-controls a.requests-link { background-color: #6c757d; color: white; }
         .personnel-controls a.qr-scan-link { background-color: #007bff; color: white; }
-        
+
         @media (max-width: 768px) {
             .admin-controls a.btn { display: block; margin-right: 0; }
             .personnel-controls a { display: block; margin-right: 0; text-align: center; }
@@ -94,19 +95,23 @@
                 <h1 class="h4 mb-0">Yönetici Paneli</h1>
             </div>
             <div class="card-body p-4">
-                
-          <div class="d-flex flex-wrap">
-    <a href="{% url 'accounts:weekly_schedule_select' %}" class="btn btn-coffee"><i class="bi bi-calendar-week"></i> Haftalık Vardiya Planla</a>
-    <a href="{% url 'accounts:personnel_list' %}" class="btn btn-coffee"><i class="bi bi-people-fill"></i> Personel Yönetimi</a>
-    <a href="{% url 'accounts:pending_leave_requests' %}" class="btn btn-coffee"><i class="bi bi-clock-history"></i> Bekleyen İzin Talepleri</a>
 
-    {# --- IF BLOĞU GEÇİCİ OLARAK KALDIRILDI --- #}
-    {# Bu butonları artık TÜM yöneticiler (Şefler dahil) görecek #}
-    <a href="{% url 'accounts:exceeded_breaks_report' %}" class="btn btn-coffee-light"><i class="bi bi-exclamation-triangle"></i> Mola Süresini Aşanlar</a>
-    <a href="{% url 'accounts:break_report_select' %}" class="btn btn-coffee-light"><i class="bi bi-graph-up"></i> Haftalık Mola Raporu</a>
-    <a href="{% url 'accounts:attendance_report_select' %}" class="btn btn-coffee-light"><i class="bi bi-file-earmark-spreadsheet"></i> Aylık Puantaj Raporu</a>
-    {# --- IF BLOĞU SONU --- #}
-</div>
+                <div class="admin-controls mb-4 p-3 bg-light rounded border">
+                    <h3 class="h5 mb-3 border-bottom pb-2"><i class="bi bi-tools"></i> Yönetim Araçları</h3>
+                    <div class="d-flex flex-wrap"> {# Butonları yan yana sırala ve sar #}
+                        {# Şef ve üstü için butonlar (Yeni kahve stili: btn-coffee) #}
+                        <a href="{% url 'accounts:weekly_schedule_select' %}" class="btn btn-coffee"><i class="bi bi-calendar-week"></i> Haftalık Vardiya Planla</a>
+                        <a href="{% url 'accounts:personnel_list' %}" class="btn btn-coffee"><i class="bi bi-people-fill"></i> Personel Yönetimi</a>
+                        <a href="{% url 'accounts:pending_leave_requests' %}" class="btn btn-coffee"><i class="bi bi-clock-history"></i> Bekleyen İzin Talepleri</a>
+
+                        {# Sadece Bölge Yöneticisi ve Superuser için Rapor Butonları (Yeni açık kahve stili: btn-coffee-light) #}
+                        {# BU BLOK 'custom_filters' GEREKTİRİR #}
+                        {% if user|has_group:"Bölge Yöneticisi" or user.is_superuser %}
+                            <a href="{% url 'accounts:exceeded_breaks_report' %}" class="btn btn-coffee-light"><i class="bi bi-exclamation-triangle"></i> Mola Süresini Aşanlar</a>
+                            <a href="{% url 'accounts:break_report_select' %}" class="btn btn-coffee-light"><i class="bi bi-graph-up"></i> Haftalık Mola Raporu</a>
+                            <a href="{% url 'accounts:attendance_report_select' %}" class="btn btn-coffee-light"><i class="bi bi-file-earmark-spreadsheet"></i> Aylık Puantaj Raporu</a>
+                        {% endif %}
+                    </div>
                 </div>
 
                 <h3 class="h5 mt-4">Kişisel Mola Durumu</h3>
@@ -120,8 +125,8 @@
                        onclick="return confirm('Bu bir test butonudur. Şube 1 için mola başlatılsın mı?');">
                         MOLA BAŞLAT/BİTİR (TEST BUTONU - ŞUBE 1)
                     </a>
-                    
-                    <a href="{% url 'accounts:qr_scanner' %}" class="btn btn-coffee qr-scan-link"><i class="bi bi-qr-code-scan"></i> Mola QR Kodu Tara</a>
+
+                    {# <a href="{% url 'accounts:qr_scanner' %}" class="btn btn-coffee qr-scan-link"><i class="bi bi-qr-code-scan"></i> Mola QR Kodu Tara</a> #}
                     <a href="{% url 'accounts:my_leave_requests' %}" class="btn btn-secondary requests-link"><i class="bi bi-list-check"></i> Taleplerim</a>
                 </div>
 
@@ -130,12 +135,12 @@
                         <h3 class="alert-heading"><i class="bi bi-pause-circle-fill"></i> MOLA DURUMU: AKTİF</h3>
                         <p>Şu anda <strong>{{ active_break.branch.name|default:'Bilinmeyen Şube' }}</strong> şubesinde moladasınız.</p>
                         <hr>
-                        <p class="mb-0">Başlangıç: <strong>{{ active_break.start_time|date:"H:i:s" }}</strong>. <em>Bitirmek için QR kodu tekrar okutun veya Test Butonuna basın.</em></p>
+                        <p class="mb-0">Başlangıç: <strong>{{ active_break.start_time|date:"H:i:s" }}</strong>. <em>Bitirmek için Test Butonuna basın.</em></p>
                     </div>
                 {% else %}
                     <div class="alert alert-success shadow-sm status-box no-break">
                         <h3 class="alert-heading"><i class="bi bi-play-circle-fill"></i> MOLA DURUMU: AKTİF DEĞİL</h3>
-                        <p class="mb-0">Şu anda çalışıyorsunuz. <em>Mola başlatmak için QR kodu okutun veya Test Butonuna basın.</em></p>
+                        <p class="mb-0">Şu anda çalışıyorsunuz. <em>Mola başlatmak için Test Butonuna basın.</em></p>
                     </div>
                 {% endif %}
                 <h2 class="h5 mt-4">{{ report_title|default:"Genel Mola Takip Raporu" }}</h2>
@@ -180,7 +185,7 @@
     {# PERSONEL GÖRÜNÜMÜ #}
     {# ==================================================================== #}
     {% else %}
-        
+
         <h1 class="h3 mb-4">Kullanıcı Ekranı</h1>
 
         <div class="personnel-controls">
@@ -194,7 +199,7 @@
                 MOLA BAŞLAT/BİTİR (TEST BUTONU - ŞUBE 1)
             </a>
 
-            <a href="{% url 'accounts:qr_scanner' %}" class="btn btn-coffee qr-scan-link"><i class="bi bi-qr-code-scan"></i> Mola QR Kodu Tara</a>
+            {# <a href="{% url 'accounts:qr_scanner' %}" class="btn btn-coffee qr-scan-link"><i class="bi bi-qr-code-scan"></i> Mola QR Kodu Tara</a> #}
             <a href="{% url 'accounts:leave_request_create' %}" class="btn btn-coffee-light"><i class="bi bi-send-plus"></i> Yeni İzin/Rapor Talebi</a>
             <a href="{% url 'accounts:my_leave_requests' %}" class="btn btn-secondary requests-link"><i class="bi bi-list-check"></i> Taleplerim</a>
         </div>
@@ -204,69 +209,13 @@
                 <h3 class="alert-heading"><i class="bi bi-pause-circle-fill"></i> MOLA DURUMU: AKTİF</h3>
                 <p>Şu anda <strong>{{ active_break.branch.name|default:'Bilinmeyen Şube' }}</strong> şubesinde moladasınız.</p>
                 <hr>
-                <p class="mb-0">Başlangıç: <strong>{{ active_break.start_time|date:"H:i:s" }}</strong>. <em>Molayı bitirmek için QR kodu okutun veya Test Butonuna basın.</em></p>
+                <p class="mb-0">Başlangıç: <strong>{{ active_break.start_time|date:"H:i:s" }}</strong>. <em>Bitirmek için Test Butonuna basın.</em></p>
             </div>
         {% else %}
             <div class="alert alert-success shadow-sm status-box no-break">
                 <h3 class="alert-heading"><i class="bi bi-play-circle-fill"></i> MOLA DURUMU: AKTİF DEĞİL</h3>
-                <p class="mb-0">Şu anda çalışıyorsunuz. <em>Mola başlatmak için QR kodu okutun veya Test Butonuna basın.</em></p>
+                <p class="mb-0">Şu anda çalışıyorsunuz. <em>Mola başlatmak için Test Butonuna basın.</em></p>
             </div>
         {% endif %}
 
-        <div class="card shadow-sm mt-4">
-            <div class="card-header bg-white">
-                <h2 class="h5 mb-0">Haftalık Vardiya Takvimi <small class="text-muted">({{ start_of_week|date:"W" }}. Hafta)</small></h2>
-            </div>
-            <div class="card-body">
-                {# FullCalendar buraya render edilecek #}
-                <div id='calendar'></div>
-            </div>
-        </div>
-
-    {% endif %} {# is_admin kontrolü bitti #}
-{% endblock %}
-
-
-{# FullCalendar için script'leri base.html'deki scripts bloğuna gönder #}
-{% block scripts %}
-    {% if not is_admin %}
-        {# FullCalendar CDN script'leri #}
-        <script src='https://cdn.jsdelivr.net/npm/fullcalendar@6.1.11/index.global.min.js'></script>
-        <script src='https://cdn.jsdelivr.net/npm/@fullcalendar/core/locales/tr.global.min.js'></script>
-
-        <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                var calendarEl = document.getElementById('calendar');
-                if (calendarEl) {
-                    try {
-                        var eventsData = JSON.parse('{{ calendar_events_json|safe|escapejs }}');
-                        var calendar = new FullCalendar.Calendar(calendarEl, {
-                            locale: 'tr',
-                            headerToolbar: { left: 'prev,next today', center: 'title', right: '' },
-                            initialView: 'dayGridWeek',
-                            firstDay: 1,
-                            height: 'auto',
-                            events: eventsData,
-                            eventDisplay: 'block',
-                            eventTextColor: '#373629',
-                            eventMouseEnter: function(info) {
-                              if (info.event.extendedProps && info.event.extendedProps.branch) {
-                                info.el.title = 'Şube: ' + info.event.extendedProps.branch;
-                              } else {
-                                  if (!['İzinli', 'Raporlu', 'Devamsız', 'Fazla Mesai'].includes(info.event.title.split(' ')[0])) {
-                                       info.el.title = info.event.title;
-                                  }
-                              }
-                            },
-                            // ... (Mobil resize script'i buraya eklenebilir) ...
-                        });
-                        calendar.render();
-                    } catch (e) {
-                        console.error("Takvim hatası:", e);
-                        calendarEl.innerHTML = "<div class='alert alert-danger'>Vardiya takvimi yüklenirken bir sorun oluştu.</div>";
-                    }
-                }
-            });
-        </script>
-    {% endif %}
-{% endblock %}
+        <div class="card shadow-sm mt

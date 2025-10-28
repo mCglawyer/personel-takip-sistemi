@@ -36,6 +36,8 @@ if RENDER_EXTERNAL_HOSTNAME:
 
 # Kendi özel alan adlarınızı ekleyin
 ALLOWED_HOSTS.extend([
+    '127.0.0.1', # Yerel testler için
+    'localhost', # Yerel testler için
     'personel-takip-sistemi-yirl.onrender.com', # Render'ın varsayılan adresi
     'www.geekpanel.net',                       # Sizin özel alan adınız
     'geekpanel.net',                           # Kök alan adınız
